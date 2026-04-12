@@ -182,6 +182,7 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button id="btn-add-bot" class="btn btn-secondary btn-sm">🤖 +1 Bot</button>
           <button id="btn-add-3-bots" class="btn btn-secondary btn-sm">🤖 +3 Bot</button>
+          <button id="btn-remove-bots" class="btn btn-danger btn-sm">🗑️ Xóa Bot</button>
         </div>
       </div>
       <div class="waiting-actions">
@@ -196,6 +197,7 @@
     <div class="form-container">
       <div class="form-card glass-card">
         <div class="form-header">
+          <button id="btn-back-keyword" class="btn btn-sm btn-ghost" style="position:absolute;left:12px;top:12px">← Quay lại</button>
           <h2>🎭 Đặt Từ Khóa Bí Mật</h2>
         </div>
         <div class="kw-info-box">
@@ -409,7 +411,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
   <!-- Agora Voice SDK -->
-  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.22.0.js"></script>
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N.js"></script>
 
   <!-- App Scripts (order matters) -->
   <script src="js/firebase-config.js"></script>

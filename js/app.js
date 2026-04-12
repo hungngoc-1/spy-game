@@ -88,9 +88,11 @@ const App = {
       for (let i = 0; i < 3; i++) await Game.addBotPlayer();
       this.showToast('Đã thêm 3 bot!', 'success');
     });
+    document.getElementById('btn-remove-bots').addEventListener('click', () => this.handleRemoveBots());
 
     // Set Keyword (custom mode)
     document.getElementById('set-keyword-form').addEventListener('submit', e => this.handleSetKeyword(e));
+    document.getElementById('btn-back-keyword').addEventListener('click', () => this.showScreen('screen-waiting'));
 
     // Game Screen - Role Modal
     document.getElementById('btn-show-my-role').addEventListener('click', () => this.toggleRoleModal(true));
@@ -266,6 +268,31 @@ const App = {
     Game.currentRoom = null;
     Game.isHost = false;
     this.showScreen('screen-home');
+  },
+
+  async handleRemoveBots() {
+    if (!Game.isHost || !Game.currentRoom) return;
+    try {
+      const snap = await db.ref('rooms/' + Game.currentRoom + '/players').once('value');
+      const players = snap.val() || {};
+      const updates = {};
+      let count = 0;
+      Object.entries(players).forEach(([id, p]) => {
+        if (p.isBot) {
+          updates[`rooms/${Game.currentRoom}/players/${id}`] = null;
+          count++;
+        }
+      });
+      if (count > 0) {
+        await db.ref().update(updates);
+        this.showToast(`🗑️ Đã xóa ${count} bot`, 'success');
+      } else {
+        this.showToast('Không có bot nào', 'info');
+      }
+    } catch (err) {
+      console.error('Remove bots error:', err);
+      this.showToast('Lỗi xóa bot', 'error');
+    }
   },
 
   clearAllTimers() {
@@ -656,9 +683,18 @@ const App = {
         }
       }
 
-      // My turn mic button
+      // My turn mic button - ONLY show STT mic in non-online mode
+      // In online mode, Agora handles voice - no STT needed
       const micBtn = document.getElementById('btn-mic-speak');
-      if (micBtn) micBtn.classList.toggle('hidden', !isMyTurn || this.isListening);
+      if (micBtn) {
+        if (isOnlineMode) {
+          micBtn.classList.add('hidden');
+          // Also hide listening indicator in online mode
+          document.getElementById('listening-indicator')?.classList.add('hidden');
+        } else {
+          micBtn.classList.toggle('hidden', !isMyTurn || this.isListening);
+        }
+      }
 
       // Start speaker timer
       this.startSpeakerTimer(roomData);

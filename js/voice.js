@@ -15,11 +15,10 @@ const Voice = {
    */
   init() {
     if (typeof AgoraRTC === 'undefined') {
-      console.warn('⚠️ Agora SDK not loaded');
+      console.warn('⚠️ Agora SDK not loaded — voice chat disabled');
       return;
     }
-    // Disable Agora logs in production
-    AgoraRTC.setLogLevel(3);
+    AgoraRTC.setLogLevel(3); // Reduce log noise
     this.client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
     this._bindEvents();
     console.log('✅ Voice module initialized');
@@ -33,60 +32,68 @@ const Voice = {
 
     // When a remote user publishes audio
     this.client.on('user-published', async (user, mediaType) => {
-      await this.client.subscribe(user, mediaType);
-      console.log(`🔊 Subscribed to ${user.uid}`);
-
-      if (mediaType === 'audio') {
-        const remoteAudioTrack = user.audioTrack;
-        remoteAudioTrack.play();
-        this.remoteUsers[user.uid] = user;
+      try {
+        await this.client.subscribe(user, mediaType);
+        if (mediaType === 'audio') {
+          const remoteAudioTrack = user.audioTrack;
+          remoteAudioTrack.play();
+          this.remoteUsers[user.uid] = user;
+          console.log(`🔊 Hearing user ${user.uid}`);
+        }
+      } catch (err) {
+        console.error('Subscribe error:', err);
       }
     });
 
-    // When a remote user stops publishing
     this.client.on('user-unpublished', (user, mediaType) => {
       if (mediaType === 'audio') {
         delete this.remoteUsers[user.uid];
       }
     });
 
-    // When a remote user leaves
     this.client.on('user-left', (user) => {
       delete this.remoteUsers[user.uid];
-      console.log(`👋 User ${user.uid} left voice`);
     });
   },
 
   /**
    * Join a voice channel (channel = room code)
+   * uid must be null (auto) or a numeric value for Agora
    */
   async join(channelName, uid) {
     if (!this.client) {
       console.warn('Voice client not initialized');
       return false;
     }
-    if (this.isJoined) {
-      console.log('Already in voice channel');
-      return true;
-    }
+    if (this.isJoined) return true;
 
     try {
+      // Convert uid to a numeric hash for Agora (must be number or null)
+      const numericUid = uid ? Math.abs(this._hashCode(uid)) % 100000000 : null;
+
       // Join the channel (token = null for testing mode)
-      await this.client.join(this.appId, channelName, null, uid || null);
+      await this.client.join(this.appId, channelName, null, numericUid);
 
       // Create and publish microphone track
       this.localTrack = await AgoraRTC.createMicrophoneAudioTrack({
-        encoderConfig: 'speech_standard'
+        encoderConfig: 'speech_standard',
+        AEC: true,  // Echo cancellation
+        AGC: true,  // Auto gain control
+        ANS: true   // Noise suppression
       });
 
       await this.client.publish([this.localTrack]);
 
       this.isJoined = true;
       this.isMuted = false;
-      console.log(`🎤 Joined voice channel: ${channelName}`);
+      console.log(`🎤 Joined voice channel: ${channelName} (uid: ${numericUid})`);
       return true;
     } catch (err) {
-      console.error('❌ Failed to join voice:', err);
+      console.error('❌ Failed to join voice:', err.message || err);
+      // If mic permission denied, show helpful message
+      if (err.code === 'PERMISSION_DENIED' || err.message?.includes('Permission')) {
+        console.error('💡 User denied microphone access');
+      }
       return false;
     }
   },
@@ -98,14 +105,11 @@ const Voice = {
     if (!this.isJoined) return;
 
     try {
-      // Stop and close local track
       if (this.localTrack) {
         this.localTrack.stop();
         this.localTrack.close();
         this.localTrack = null;
       }
-
-      // Leave the channel
       await this.client.leave();
       this.remoteUsers = {};
       this.isJoined = false;
@@ -121,10 +125,8 @@ const Voice = {
    */
   toggleMute() {
     if (!this.localTrack) return this.isMuted;
-
     this.isMuted = !this.isMuted;
     this.localTrack.setEnabled(!this.isMuted);
-    console.log(this.isMuted ? '🔇 Muted' : '🔊 Unmuted');
     return this.isMuted;
   },
 
@@ -142,6 +144,19 @@ const Voice = {
    */
   getRemoteUserCount() {
     return Object.keys(this.remoteUsers).length;
+  },
+
+  /**
+   * Hash a string to a number (for UID)
+   */
+  _hashCode(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
   }
 };
 
