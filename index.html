@@ -362,6 +362,7 @@
             <p id="vote-done-text">Đã bỏ phiếu!</p>
             <p class="sub">Chờ mọi người vote xong...</p>
             <div id="vote-progress" style="margin-top:8px;font-size:0.85rem;color:var(--text-muted)"></div>
+            <button id="btn-exit-vote" class="btn btn-secondary btn-sm" style="margin-top:14px">✖ Thoát về phòng</button>
           </div>
         </div>
 
@@ -371,6 +372,7 @@
             <div class="eliminated-icon">💀</div>
             <p>Bạn đã bị loại và không thể vote</p>
             <p class="sub">Chờ kết quả...</p>
+            <button id="btn-exit-vote-elim" class="btn btn-secondary btn-sm" style="margin-top:14px">✖ Thoát về phòng</button>
           </div>
         </div>
       </div>
@@ -410,8 +412,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
-  <!-- Agora Voice SDK -->
-  <script src="https://download.agora.io/sdk/release/AgoraRTC_N.js"></script>
+  <!-- Agora Voice SDK v4.24.2 -->
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.24.2.js"></script>
 
   <!-- App Scripts (order matters) -->
   <script src="js/firebase-config.js"></script>

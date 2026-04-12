@@ -116,6 +116,10 @@ const App = {
     // Voting - Cancel step 2
     document.getElementById('btn-cancel-vote').addEventListener('click', () => this.resetVoteStep());
 
+    // Voting - Exit to home
+    document.getElementById('btn-exit-vote').addEventListener('click', () => this.handleBackHome());
+    document.getElementById('btn-exit-vote-elim').addEventListener('click', () => this.handleBackHome());
+
     // Accusation buttons
     document.querySelectorAll('.accusation-btn').forEach(btn => {
       btn.addEventListener('click', e => {
@@ -312,14 +316,19 @@ const App = {
     const statusEl = document.getElementById('voice-status');
     if (statusEl) statusEl.textContent = '🟡 Đang kết nối...';
 
-    const success = await Voice.join(channelName, uid.substring(0, 8));
-    if (success) {
+    // Stop any old STT mic first to avoid conflicts
+    this.stopMic();
+
+    const result = await Voice.join(channelName, uid);
+    if (result.success) {
       if (statusEl) statusEl.textContent = '🟢 Đã kết nối';
       this.updateVoiceUI(false);
       this.showToast('🎤 Voice chat đã bật!', 'success');
     } else {
-      if (statusEl) statusEl.textContent = '🔴 Lỗi kết nối';
-      this.showToast('⚠️ Không thể kết nối voice chat', 'warning');
+      const errMsg = result.error || 'Lỗi không xác định';
+      if (statusEl) statusEl.textContent = '🔴 ' + errMsg;
+      this.showToast('⚠️ ' + errMsg, 'warning');
+      console.error('Voice join failed:', errMsg);
     }
   },
 
@@ -699,8 +708,9 @@ const App = {
       // Start speaker timer
       this.startSpeakerTimer(roomData);
 
-      // Host controls (speaking: only next-speaker)
-      if (Game.isHost) {
+      // Host controls (speaking: next-speaker always visible)
+      // Also show for current speaker so they can skip their own turn
+      if (Game.isHost || isMyTurn) {
         const bar = document.getElementById('host-action-bar');
         bar?.classList.remove('hidden');
         document.getElementById('btn-next-speaker')?.classList.remove('hidden');
