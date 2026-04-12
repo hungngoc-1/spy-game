@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="AI Spy Game - Trò chơi Ai là gián điệp với AI quản trò. Chơi trực tiếp hoặc online cùng bạn bè.">
+  <meta name="theme-color" content="#06060f">
+  <title>🕵️ SPY GAME - Ai Là Gián Điệp</title>
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
+</head>
+<body>
+
+  <!-- ========================================
+       TOAST NOTIFICATIONS
+       ======================================== -->
+  <div id="toast-container"></div>
+
+  <!-- ========================================
+       LOADING SCREEN
+       ======================================== -->
+  <section id="screen-loading" class="screen active">
+    <div class="loading-content">
+      <div class="loading-logo">🕵️</div>
+      <div class="loading-title">SPY GAME</div>
+      <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+      <div id="loading-status">Đang tải...</div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       AUTH SCREEN (Login / Signup)
+       ======================================== -->
+  <section id="screen-auth" class="screen">
+    <div class="auth-container glass-card">
+      <div class="auth-header">
+        <div class="auth-logo">🕵️</div>
+        <h1>SPY GAME</h1>
+        <p>Ai Là Gián Điệp?</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Đăng nhập</button>
+        <button class="auth-tab" data-tab="signup">Đăng ký</button>
+      </div>
+
+      <form id="login-form" class="auth-form">
+        <div class="input-group">
+          <span class="input-icon">📧</span>
+          <input type="email" id="login-email" placeholder="Email" required autocomplete="email">
+        </div>
+        <div class="input-group">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="login-password" placeholder="Mật khẩu" required minlength="6" autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Đăng nhập</button>
+      </form>
+
+      <form id="signup-form" class="auth-form hidden">
+        <div class="input-group">
+          <span class="input-icon">👤</span>
+          <input type="text" id="signup-name" placeholder="Tên hiển thị" required minlength="2" maxlength="20" autocomplete="name">
+        </div>
+        <div class="input-group">
+          <span class="input-icon">📧</span>
+          <input type="email" id="signup-email" placeholder="Email" required autocomplete="email">
+        </div>
+        <div class="input-group">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="signup-password" placeholder="Mật khẩu (6+ ký tự)" required minlength="6" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Đăng ký</button>
+      </form>
+
+      <div id="auth-error" class="hidden"></div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       HOME SCREEN
+       ======================================== -->
+  <section id="screen-home" class="screen">
+    <div class="home-container">
+      <!-- User Bar -->
+      <div class="user-bar glass-card">
+        <div class="user-info">
+          <div class="user-avatar" id="user-avatar">U</div>
+          <span id="user-display-name">User</span>
+        </div>
+        <button id="btn-logout" class="btn btn-sm btn-secondary">Đăng xuất</button>
+      </div>
+
+      <!-- Header -->
+      <div class="home-header">
+        <h1><span class="emoji">🕵️</span> <span class="home-gradient-text">SPY GAME</span></h1>
+        <p>Chọn chế độ chơi bên dưới, sau đó tạo hoặc tham gia phòng</p>
+      </div>
+
+      <!-- Mode Selection -->
+      <div class="mode-title">Chế độ chơi</div>
+      <div class="mode-cards">
+        <div class="mode-card glass-card" id="mode-inperson">
+          <div class="mode-icon">🏠</div>
+          <h2>Chơi Trực Tiếp</h2>
+          <p>Gặp mặt ngoài đời, web hỗ trợ chia vai trò</p>
+          <ul class="mode-features">
+            <li>Quản trò biết tất cả vai trò</li>
+            <li>Xem vai trò riêng trên điện thoại</li>
+            <li>Vote loại người chơi trên web</li>
+          </ul>
+        </div>
+        <div class="mode-card glass-card" id="mode-online">
+          <div class="mode-icon">🤖</div>
+          <h2>Online AI</h2>
+          <p>Chơi online, AI Gemini làm quản trò</p>
+          <ul class="mode-features">
+            <li>AI phát từ khóa & vai trò</li>
+            <li>Chat trực tuyến trong game</li>
+            <li>AI đặt câu hỏi & phân tích</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="home-actions">
+        <button id="btn-create-room" class="btn btn-primary btn-lg">🎮 Tạo Phòng</button>
+        <button id="btn-join-room" class="btn btn-secondary btn-lg">🚪 Tham Gia</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       CREATE ROOM SCREEN
+       ======================================== -->
+  <section id="screen-create" class="screen">
+    <div class="form-container">
+      <div class="form-card glass-card">
+        <div class="form-header">
+          <button id="btn-back-create" class="form-back">←</button>
+          <h2>🎮 Tạo Phòng Mới</h2>
+        </div>
+
+        <form id="create-room-form">
+          <div class="setting-group">
+            <div class="setting-label">
+              <span>Số người chơi tối đa</span>
+              <span class="setting-value" id="players-value">10</span>
+            </div>
+            <input type="range" id="setting-players" min="3" max="15" value="10">
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-label">
+              <span>Số gián điệp</span>
+              <span class="setting-value" id="spies-value">1</span>
+            </div>
+            <input type="range" id="setting-spies" min="1" max="4" value="1">
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-label">
+              <span>Số mũ trắng</span>
+              <span class="setting-value" id="whitehats-value">0</span>
+            </div>
+            <input type="range" id="setting-whitehats" min="0" max="3" value="0">
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-label">
+              <span>Thời gian thảo luận (giây)</span>
+              <span class="setting-value" id="discussion-value">180</span>
+            </div>
+            <input type="range" id="setting-discussion" min="60" max="600" step="30" value="180">
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-label">
+              <span>Kiểu từ khóa</span>
+            </div>
+            <select id="setting-keyword-mode">
+              <option value="pair">Cặp từ (Spy biết từ khác)</option>
+              <option value="single">Một từ (Spy không biết từ)</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px">Tạo Phòng</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       JOIN ROOM SCREEN
+       ======================================== -->
+  <section id="screen-join" class="screen">
+    <div class="form-container">
+      <div class="form-card glass-card">
+        <div class="form-header">
+          <button id="btn-back-join" class="form-back">←</button>
+          <h2>🚪 Tham Gia Phòng</h2>
+        </div>
+
+        <form id="join-room-form">
+          <div class="input-group">
+            <span class="input-icon">🔑</span>
+            <input type="text" id="join-code" class="join-code-input" placeholder="MÃ PHÒNG" required maxlength="6" autocomplete="off" style="text-align:center;font-size:1.5rem;font-weight:800;letter-spacing:0.2em;text-transform:uppercase">
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Tham Gia</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       WAITING ROOM SCREEN
+       ======================================== -->
+  <section id="screen-waiting" class="screen">
+    <div class="waiting-container">
+      <!-- Room Code Display -->
+      <div class="room-code-card glass-card">
+        <div class="room-code-label">Mã phòng</div>
+        <div class="room-code" id="room-code-display">------</div>
+        <div class="room-meta">
+          <span id="room-mode-display">🏠 Trực tiếp</span>
+          <span>•</span>
+          <span id="player-count">0 / 10</span>
+        </div>
+        <button id="btn-copy-code" class="btn btn-sm btn-secondary" style="margin-top:12px">📋 Copy mã</button>
+      </div>
+
+      <!-- Players List -->
+      <div class="waiting-header">
+        <h3>Người chơi</h3>
+      </div>
+      <div id="players-list"></div>
+
+      <!-- Test Controls (Host only) -->
+      <div id="test-controls" class="hidden" style="margin-bottom:12px">
+        <div class="game-section-title">🧪 Chế độ test</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="btn-add-bot" class="btn btn-secondary btn-sm">🤖 Thêm Bot</button>
+          <button id="btn-add-3-bots" class="btn btn-secondary btn-sm">🤖 +3 Bot</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="waiting-actions">
+        <button id="btn-start-game" class="btn btn-primary btn-lg hidden">🎮 Bắt Đầu Game</button>
+        <button id="btn-leave-room" class="btn btn-danger">🚪 Rời Phòng</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       GAME SCREEN
+       ======================================== -->
+  <section id="screen-game" class="screen">
+    <div class="game-container">
+      <!-- Top Bar -->
+      <div class="game-top-bar">
+        <div class="game-info">
+          <span class="game-round-badge" id="game-round">Vòng 1</span>
+          <span class="game-mode-badge" id="game-mode-label">🏠 Trực tiếp</span>
+        </div>
+        <button id="btn-leave-game" class="btn btn-sm btn-danger">Rời</button>
+      </div>
+
+      <!-- Role Card (Flip to reveal) -->
+      <div class="role-card-wrapper">
+        <div class="role-card" id="role-card">
+          <div class="role-card-back">
+            <div class="role-card-back-icon">❓</div>
+            <div class="role-card-back-text">Bấm nút bên dưới để xem vai trò</div>
+          </div>
+          <div class="role-card-front" id="role-card-front">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+      </div>
+
+      <button id="btn-reveal-role" class="btn btn-primary" style="width:100%;margin-bottom:20px">👁️ Xem vai trò</button>
+
+      <!-- Host Panel (In-Person mode - only host sees) -->
+      <div id="host-panel" class="hidden glass-card" style="padding:20px;margin-bottom:20px">
+        <div class="game-section-title">👑 Bảng điều khiển quản trò</div>
+        <div id="host-roles-list"></div>
+      </div>
+
+      <!-- Host Controls -->
+      <div id="host-controls" class="hidden">
+        <button id="btn-start-vote" class="btn btn-primary btn-lg" style="width:100%">🗳️ Bắt Đầu Vote</button>
+      </div>
+
+      <!-- Players in Game -->
+      <div class="game-section">
+        <div class="game-section-title">👥 Người chơi</div>
+        <div id="game-players-list"></div>
+      </div>
+
+      <!-- Chat Section (Online mode only) -->
+      <div id="chat-section" class="hidden">
+        <div class="chat-card glass-card">
+          <div class="chat-header">💬 Phòng chat</div>
+          <div id="chat-messages"></div>
+          <form id="chat-form" class="chat-input-bar">
+            <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." autocomplete="off">
+            <button type="button" id="btn-mic" class="btn btn-secondary btn-icon mic-btn" title="Nhấn giữ để nói">🎤</button>
+            <button type="submit" class="btn btn-primary btn-sm">Gửi</button>
+          </form>
+          <div id="mic-status" class="mic-status hidden">🎤 Đang nghe...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       VOTING SCREEN
+       ======================================== -->
+  <section id="screen-voting" class="screen">
+    <div class="voting-container">
+      <div class="voting-card glass-card">
+        <div id="voting-content">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       REVEAL SCREEN (After voting)
+       ======================================== -->
+  <section id="screen-reveal" class="screen">
+    <div class="reveal-container">
+      <div id="reveal-content" class="glass-card" style="padding:32px">
+        <!-- Filled by JS -->
+      </div>
+      <button id="btn-continue-game" class="btn btn-primary btn-lg hidden" style="width:100%;margin-top:16px">▶️ Tiếp tục</button>
+    </div>
+  </section>
+
+  <!-- ========================================
+       RESULTS SCREEN (Game Over)
+       ======================================== -->
+  <section id="screen-results" class="screen">
+    <div class="results-container">
+      <div id="results-content">
+        <!-- Filled by JS -->
+      </div>
+      <div class="results-actions">
+        <button id="btn-play-again" class="btn btn-primary btn-lg hidden">🔄 Chơi Lại</button>
+        <button id="btn-back-home" class="btn btn-secondary btn-lg">🏠 Về Trang Chủ</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================
+       FIREBASE SDK (Compat CDN)
+       ======================================== -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+  <!-- App Scripts (order matters) -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/gemini.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
