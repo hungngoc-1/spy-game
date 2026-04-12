@@ -31,6 +31,7 @@ const App = {
       }
     });
     this.bindEvents();
+    Voice.init();
     setTimeout(() => {
       const s = document.getElementById('loading-status');
       if (s) s.textContent = 'Đang kết nối Firebase...';
@@ -129,6 +130,9 @@ const App = {
 
     // Reveal Screen
     document.getElementById('btn-continue-game').addEventListener('click', () => Game.continueGame());
+
+    // Voice Chat
+    document.getElementById('btn-voice-mute').addEventListener('click', () => this.toggleVoiceMute());
 
     // Results Screen
     document.getElementById('btn-play-again').addEventListener('click', () => Game.resetGame());
@@ -247,6 +251,7 @@ const App = {
     if (confirm(msg)) {
       this.stopMic();
       this.clearAllTimers();
+      await Voice.leave();
       Game.removeAllListeners();
       await Game.leaveRoom();
       this.showScreen('screen-home');
@@ -256,6 +261,7 @@ const App = {
   handleBackHome() {
     this.stopMic();
     this.clearAllTimers();
+    Voice.leave();
     Game.removeAllListeners();
     Game.currentRoom = null;
     Game.isHost = false;
@@ -266,6 +272,42 @@ const App = {
     if (this.speakerTimerInterval) { clearInterval(this.speakerTimerInterval); this.speakerTimerInterval = null; }
     if (this.discussionTimerInterval) { clearInterval(this.discussionTimerInterval); this.discussionTimerInterval = null; }
     if (this.guessTimerInterval) { clearInterval(this.guessTimerInterval); this.guessTimerInterval = null; }
+  },
+
+  // ================================
+  // VOICE CHAT
+  // ================================
+
+  async joinVoiceChat(channelName) {
+    const uid = Auth.currentUser?.uid;
+    if (!uid || !channelName) return;
+
+    const statusEl = document.getElementById('voice-status');
+    if (statusEl) statusEl.textContent = '🟡 Đang kết nối...';
+
+    const success = await Voice.join(channelName, uid.substring(0, 8));
+    if (success) {
+      if (statusEl) statusEl.textContent = '🟢 Đã kết nối';
+      this.updateVoiceUI(false);
+      this.showToast('🎤 Voice chat đã bật!', 'success');
+    } else {
+      if (statusEl) statusEl.textContent = '🔴 Lỗi kết nối';
+      this.showToast('⚠️ Không thể kết nối voice chat', 'warning');
+    }
+  },
+
+  toggleVoiceMute() {
+    const muted = Voice.toggleMute();
+    this.updateVoiceUI(muted);
+  },
+
+  updateVoiceUI(muted) {
+    const icon = document.getElementById('voice-icon');
+    const label = document.getElementById('voice-label');
+    const btn = document.getElementById('btn-voice-mute');
+    if (icon) icon.textContent = muted ? '🔇' : '🎤';
+    if (label) label.textContent = muted ? 'Mic Tắt' : 'Mic Bật';
+    if (btn) btn.classList.toggle('voice-muted', muted);
   },
 
   // ================================
@@ -431,6 +473,14 @@ const App = {
       this.myRole = me.role;
       this.myKeyword = me.keyword;
     }
+
+    // Join voice chat for online mode
+    const isOnlineMode = roomData.mode === 'online';
+    if (isOnlineMode && !Voice.isJoined) {
+      this.joinVoiceChat(roomData.code || Game.currentRoom);
+    }
+    // Show/hide voice bar
+    document.getElementById('voice-chat-bar')?.classList.toggle('hidden', !isOnlineMode);
 
     // Render game
     this.renderCircleTable(roomData);
