@@ -3,26 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="AI Spy Game - Trò chơi Ai là gián điệp với AI quản trò. Chơi trực tiếp hoặc online cùng bạn bè.">
+  <meta name="description" content="SPY GAME - Ai Là Gián Điệp? Chơi online với mic, buộc tội vai trò, luật chơi mới cực thú vị!">
   <meta name="theme-color" content="#06060f">
   <title>🕵️ SPY GAME - Ai Là Gián Điệp</title>
-  
-  <!-- CSS -->
   <link rel="stylesheet" href="css/style.css">
-  
-  <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
 </head>
 <body>
 
-  <!-- ========================================
-       TOAST NOTIFICATIONS
-       ======================================== -->
   <div id="toast-container"></div>
 
-  <!-- ========================================
-       LOADING SCREEN
-       ======================================== -->
+  <!-- ===== LOADING ===== -->
   <section id="screen-loading" class="screen active">
     <div class="loading-content">
       <div class="loading-logo">🕵️</div>
@@ -32,9 +23,7 @@
     </div>
   </section>
 
-  <!-- ========================================
-       AUTH SCREEN (Login / Signup)
-       ======================================== -->
+  <!-- ===== AUTH ===== -->
   <section id="screen-auth" class="screen">
     <div class="auth-container glass-card">
       <div class="auth-header">
@@ -42,50 +31,28 @@
         <h1>SPY GAME</h1>
         <p>Ai Là Gián Điệp?</p>
       </div>
-
       <div class="auth-tabs">
         <button class="auth-tab active" data-tab="login">Đăng nhập</button>
         <button class="auth-tab" data-tab="signup">Đăng ký</button>
       </div>
-
       <form id="login-form" class="auth-form">
-        <div class="input-group">
-          <span class="input-icon">📧</span>
-          <input type="email" id="login-email" placeholder="Email" required autocomplete="email">
-        </div>
-        <div class="input-group">
-          <span class="input-icon">🔒</span>
-          <input type="password" id="login-password" placeholder="Mật khẩu" required minlength="6" autocomplete="current-password">
-        </div>
+        <div class="input-group"><span class="input-icon">📧</span><input type="email" id="login-email" placeholder="Email" required autocomplete="email"></div>
+        <div class="input-group"><span class="input-icon">🔒</span><input type="password" id="login-password" placeholder="Mật khẩu" required minlength="6" autocomplete="current-password"></div>
         <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Đăng nhập</button>
       </form>
-
       <form id="signup-form" class="auth-form hidden">
-        <div class="input-group">
-          <span class="input-icon">👤</span>
-          <input type="text" id="signup-name" placeholder="Tên hiển thị" required minlength="2" maxlength="20" autocomplete="name">
-        </div>
-        <div class="input-group">
-          <span class="input-icon">📧</span>
-          <input type="email" id="signup-email" placeholder="Email" required autocomplete="email">
-        </div>
-        <div class="input-group">
-          <span class="input-icon">🔒</span>
-          <input type="password" id="signup-password" placeholder="Mật khẩu (6+ ký tự)" required minlength="6" autocomplete="new-password">
-        </div>
+        <div class="input-group"><span class="input-icon">👤</span><input type="text" id="signup-name" placeholder="Tên hiển thị" required minlength="2" maxlength="20" autocomplete="name"></div>
+        <div class="input-group"><span class="input-icon">📧</span><input type="email" id="signup-email" placeholder="Email" required autocomplete="email"></div>
+        <div class="input-group"><span class="input-icon">🔒</span><input type="password" id="signup-password" placeholder="Mật khẩu (6+ ký tự)" required minlength="6" autocomplete="new-password"></div>
         <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Đăng ký</button>
       </form>
-
       <div id="auth-error" class="hidden"></div>
     </div>
   </section>
 
-  <!-- ========================================
-       HOME SCREEN
-       ======================================== -->
+  <!-- ===== HOME ===== -->
   <section id="screen-home" class="screen">
     <div class="home-container">
-      <!-- User Bar -->
       <div class="user-bar glass-card">
         <div class="user-info">
           <div class="user-avatar" id="user-avatar">U</div>
@@ -93,39 +60,43 @@
         </div>
         <button id="btn-logout" class="btn btn-sm btn-secondary">Đăng xuất</button>
       </div>
-
-      <!-- Header -->
       <div class="home-header">
         <h1><span class="emoji">🕵️</span> <span class="home-gradient-text">SPY GAME</span></h1>
-        <p>Chọn chế độ chơi bên dưới, sau đó tạo hoặc tham gia phòng</p>
+        <p>Chọn chế độ chơi, tạo hoặc tham gia phòng</p>
       </div>
-
-      <!-- Mode Selection -->
       <div class="mode-title">Chế độ chơi</div>
-      <div class="mode-cards">
+      <div class="mode-cards mode-cards-3">
         <div class="mode-card glass-card" id="mode-inperson">
           <div class="mode-icon">🏠</div>
-          <h2>Chơi Trực Tiếp</h2>
-          <p>Gặp mặt ngoài đời, web hỗ trợ chia vai trò</p>
+          <h2>Trực Tiếp</h2>
+          <p>Gặp mặt, web hỗ trợ chia vai</p>
           <ul class="mode-features">
-            <li>Quản trò biết tất cả vai trò</li>
-            <li>Xem vai trò riêng trên điện thoại</li>
-            <li>Vote loại người chơi trên web</li>
+            <li>AI tạo từ khóa tự động</li>
+            <li>Quản trò thấy tất cả</li>
+            <li>Vote loại người chơi</li>
           </ul>
         </div>
         <div class="mode-card glass-card" id="mode-online">
           <div class="mode-icon">🤖</div>
           <h2>Online AI</h2>
-          <p>Chơi online, AI Gemini làm quản trò</p>
+          <p>AI làm quản trò, chơi online</p>
           <ul class="mode-features">
-            <li>AI phát từ khóa & vai trò</li>
-            <li>Chat trực tuyến trong game</li>
-            <li>AI đặt câu hỏi & phân tích</li>
+            <li>AI phát từ khóa & vai</li>
+            <li>Mic lần lượt theo vòng</li>
+            <li>Vote + buộc tội vai</li>
+          </ul>
+        </div>
+        <div class="mode-card glass-card custom-mode" id="mode-custom">
+          <div class="mode-icon">🎭</div>
+          <h2>Tự Ra Đề</h2>
+          <p>Host tự nhập từ khóa bí mật</p>
+          <ul class="mode-features">
+            <li>Host nhập từ trước khi chơi</li>
+            <li>Mic lần lượt + thảo luận</li>
+            <li>Vote + buộc tội vai trò</li>
           </ul>
         </div>
       </div>
-
-      <!-- Action Buttons -->
       <div class="home-actions">
         <button id="btn-create-room" class="btn btn-primary btn-lg">🎮 Tạo Phòng</button>
         <button id="btn-join-room" class="btn btn-secondary btn-lg">🚪 Tham Gia</button>
@@ -133,9 +104,7 @@
     </div>
   </section>
 
-  <!-- ========================================
-       CREATE ROOM SCREEN
-       ======================================== -->
+  <!-- ===== CREATE ROOM ===== -->
   <section id="screen-create" class="screen">
     <div class="form-container">
       <div class="form-card glass-card">
@@ -143,59 +112,37 @@
           <button id="btn-back-create" class="form-back">←</button>
           <h2>🎮 Tạo Phòng Mới</h2>
         </div>
-
         <form id="create-room-form">
           <div class="setting-group">
-            <div class="setting-label">
-              <span>Số người chơi tối đa</span>
-              <span class="setting-value" id="players-value">10</span>
-            </div>
+            <div class="setting-label"><span>Số người chơi tối đa</span><span class="setting-value" id="players-value">10</span></div>
             <input type="range" id="setting-players" min="3" max="15" value="10">
           </div>
-
           <div class="setting-group">
-            <div class="setting-label">
-              <span>Số gián điệp</span>
-              <span class="setting-value" id="spies-value">1</span>
-            </div>
+            <div class="setting-label"><span>Số gián điệp 🕵️</span><span class="setting-value" id="spies-value">1</span></div>
             <input type="range" id="setting-spies" min="1" max="4" value="1">
           </div>
-
           <div class="setting-group">
-            <div class="setting-label">
-              <span>Số mũ trắng</span>
-              <span class="setting-value" id="whitehats-value">0</span>
-            </div>
+            <div class="setting-label"><span>Số mũ trắng 🎩</span><span class="setting-value" id="whitehats-value">0</span></div>
             <input type="range" id="setting-whitehats" min="0" max="3" value="0">
           </div>
-
           <div class="setting-group">
-            <div class="setting-label">
-              <span>Thời gian thảo luận (giây)</span>
-              <span class="setting-value" id="discussion-value">180</span>
-            </div>
-            <input type="range" id="setting-discussion" min="60" max="600" step="30" value="180">
+            <div class="setting-label"><span>Thời gian thảo luận (giây)</span><span class="setting-value" id="discussion-value">120</span></div>
+            <input type="range" id="setting-discussion" min="30" max="300" step="15" value="120">
           </div>
-
-          <div class="setting-group">
-            <div class="setting-label">
-              <span>Kiểu từ khóa</span>
-            </div>
+          <div id="keyword-mode-setting" class="setting-group">
+            <div class="setting-label"><span>Kiểu từ khóa</span></div>
             <select id="setting-keyword-mode">
               <option value="pair">Cặp từ (Spy biết từ khác)</option>
               <option value="single">Một từ (Spy không biết từ)</option>
             </select>
           </div>
-
           <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px">Tạo Phòng</button>
         </form>
       </div>
     </div>
   </section>
 
-  <!-- ========================================
-       JOIN ROOM SCREEN
-       ======================================== -->
+  <!-- ===== JOIN ROOM ===== -->
   <section id="screen-join" class="screen">
     <div class="form-container">
       <div class="form-card glass-card">
@@ -203,11 +150,11 @@
           <button id="btn-back-join" class="form-back">←</button>
           <h2>🚪 Tham Gia Phòng</h2>
         </div>
-
         <form id="join-room-form">
           <div class="input-group">
             <span class="input-icon">🔑</span>
-            <input type="text" id="join-code" class="join-code-input" placeholder="MÃ PHÒNG" required maxlength="6" autocomplete="off" style="text-align:center;font-size:1.5rem;font-weight:800;letter-spacing:0.2em;text-transform:uppercase">
+            <input type="text" id="join-code" placeholder="MÃ PHÒNG" required maxlength="6" autocomplete="off"
+              style="text-align:center;font-size:1.5rem;font-weight:800;letter-spacing:0.2em;text-transform:uppercase">
           </div>
           <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Tham Gia</button>
         </form>
@@ -215,12 +162,9 @@
     </div>
   </section>
 
-  <!-- ========================================
-       WAITING ROOM SCREEN
-       ======================================== -->
+  <!-- ===== WAITING ROOM ===== -->
   <section id="screen-waiting" class="screen">
     <div class="waiting-container">
-      <!-- Room Code Display -->
       <div class="room-code-card glass-card">
         <div class="room-code-label">Mã phòng</div>
         <div class="room-code" id="room-code-display">------</div>
@@ -231,23 +175,15 @@
         </div>
         <button id="btn-copy-code" class="btn btn-sm btn-secondary" style="margin-top:12px">📋 Copy mã</button>
       </div>
-
-      <!-- Players List -->
-      <div class="waiting-header">
-        <h3>Người chơi</h3>
-      </div>
+      <div class="waiting-header"><h3>Người chơi trong phòng</h3></div>
       <div id="players-list"></div>
-
-      <!-- Test Controls (Host only) -->
       <div id="test-controls" class="hidden" style="margin-bottom:12px">
         <div class="game-section-title">🧪 Chế độ test</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button id="btn-add-bot" class="btn btn-secondary btn-sm">🤖 Thêm Bot</button>
+          <button id="btn-add-bot" class="btn btn-secondary btn-sm">🤖 +1 Bot</button>
           <button id="btn-add-3-bots" class="btn btn-secondary btn-sm">🤖 +3 Bot</button>
         </div>
       </div>
-
-      <!-- Actions -->
       <div class="waiting-actions">
         <button id="btn-start-game" class="btn btn-primary btn-lg hidden">🎮 Bắt Đầu Game</button>
         <button id="btn-leave-room" class="btn btn-danger">🚪 Rời Phòng</button>
@@ -255,101 +191,201 @@
     </div>
   </section>
 
-  <!-- ========================================
-       GAME SCREEN
-       ======================================== -->
+  <!-- ===== SET KEYWORD (Custom mode, host only) ===== -->
+  <section id="screen-set-keyword" class="screen">
+    <div class="form-container">
+      <div class="form-card glass-card">
+        <div class="form-header">
+          <h2>🎭 Đặt Từ Khóa Bí Mật</h2>
+        </div>
+        <div class="kw-info-box">
+          <p>👥 <strong>Dân thường</strong> sẽ biết từ của họ</p>
+          <p>🕵️ <strong>Gián điệp</strong> và 🎩 <strong>Mũ trắng</strong> KHÔNG biết từ dân</p>
+          <p>🎲 Vai trò sẽ được chia <strong>ngẫu nhiên</strong></p>
+        </div>
+        <form id="set-keyword-form">
+          <div class="input-group">
+            <span class="input-icon">👥</span>
+            <input type="text" id="kw-civilian" placeholder="Từ khóa dân thường (VD: Phở)" required autocomplete="off" maxlength="50">
+          </div>
+          <div class="input-group">
+            <span class="input-icon">🕵️</span>
+            <input type="text" id="kw-spy" placeholder="Từ gián điệp (VD: Bún bò) — để trống nếu không có" autocomplete="off" maxlength="50">
+          </div>
+          <div class="input-group">
+            <span class="input-icon">🏷️</span>
+            <input type="text" id="kw-category" placeholder="Chủ đề (VD: Đồ ăn)" autocomplete="off" maxlength="30">
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px">▶️ Bắt Đầu Game!</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GAME SCREEN - CIRCULAR TABLE ===== -->
   <section id="screen-game" class="screen">
-    <div class="game-container">
+    <div class="game-wrap">
+
       <!-- Top Bar -->
       <div class="game-top-bar">
         <div class="game-info">
           <span class="game-round-badge" id="game-round">Vòng 1</span>
-          <span class="game-mode-badge" id="game-mode-label">🏠 Trực tiếp</span>
+          <span class="phase-badge" id="phase-badge">🎤 Phát biểu</span>
         </div>
-        <button id="btn-leave-game" class="btn btn-sm btn-danger">Rời</button>
+        <div class="game-top-right">
+          <button id="btn-leave-game" class="btn btn-sm btn-danger">Rời</button>
+        </div>
       </div>
 
-      <!-- Role Card (Flip to reveal) -->
-      <div class="role-card-wrapper">
-        <div class="role-card" id="role-card">
-          <div class="role-card-back">
-            <div class="role-card-back-icon">❓</div>
-            <div class="role-card-back-text">Bấm nút bên dưới để xem vai trò</div>
+      <!-- Arena: Players in a circle -->
+      <div class="game-arena">
+        <div class="circle-table" id="circle-table"></div>
+        <!-- Speech center overlay -->
+        <div class="speech-center" id="speech-center">
+          <div class="speech-speaker-name" id="speech-speaker-name"></div>
+          <div class="speech-text" id="speech-text"></div>
+          <div class="speech-interim" id="speech-interim"></div>
+          <div class="speech-placeholder" id="speech-placeholder">
+            🕵️<br><small>Bàn họp</small>
           </div>
-          <div class="role-card-front" id="role-card-front">
-            <!-- Filled by JS -->
+        </div>
+      </div>
+
+      <!-- Bottom Controls -->
+      <div class="game-bottom">
+
+        <!-- Speaking Phase Controls -->
+        <div id="speaking-controls" class="phase-controls hidden">
+          <div class="speaker-status-text" id="speaker-status-text">Chờ...</div>
+          <div class="speaker-timer-wrap">
+            <div class="speaker-timer-bar">
+              <div class="timer-fill" id="timer-fill" style="width:100%"></div>
+            </div>
+            <span class="timer-text" id="timer-text">0:30</span>
+          </div>
+          <button id="btn-mic-speak" class="btn btn-primary mic-big-btn hidden">🎤 Bấm để nói</button>
+          <div id="listening-indicator" class="listening-indicator hidden">
+            <div class="pulse-ring"></div>
+            <span>🔴 Đang nghe...</span>
+            <button id="btn-stop-speak" class="btn btn-sm btn-danger" style="margin-left:8px">Dừng</button>
           </div>
         </div>
-      </div>
 
-      <button id="btn-reveal-role" class="btn btn-primary" style="width:100%;margin-bottom:20px">👁️ Xem vai trò</button>
-
-      <!-- Host Panel (In-Person mode - only host sees) -->
-      <div id="host-panel" class="hidden glass-card" style="padding:20px;margin-bottom:20px">
-        <div class="game-section-title">👑 Bảng điều khiển quản trò</div>
-        <div id="host-roles-list"></div>
-      </div>
-
-      <!-- Host Controls -->
-      <div id="host-controls" class="hidden">
-        <button id="btn-start-vote" class="btn btn-primary btn-lg" style="width:100%">🗳️ Bắt Đầu Vote</button>
-      </div>
-
-      <!-- Players in Game -->
-      <div class="game-section">
-        <div class="game-section-title">👥 Người chơi</div>
-        <div id="game-players-list"></div>
-      </div>
-
-      <!-- Chat Section (Online mode only) -->
-      <div id="chat-section" class="hidden">
-        <div class="chat-card glass-card">
-          <div class="chat-header">💬 Phòng chat</div>
-          <div id="chat-messages"></div>
-          <form id="chat-form" class="chat-input-bar">
-            <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." autocomplete="off">
-            <button type="button" id="btn-mic" class="btn btn-secondary btn-icon mic-btn" title="Nhấn giữ để nói">🎤</button>
-            <button type="submit" class="btn btn-primary btn-sm">Gửi</button>
-          </form>
-          <div id="mic-status" class="mic-status hidden">🎤 Đang nghe...</div>
+        <!-- Discussion Phase Controls -->
+        <div id="discussion-controls" class="phase-controls hidden">
+          <div class="discussion-header">
+            <span class="discussion-label">💬 Thảo luận tự do!</span>
+            <span class="discussion-timer-text" id="discussion-timer-text">2:00</span>
+          </div>
+          <div class="discussion-timer-bar">
+            <div class="disc-timer-fill" id="disc-timer-fill" style="width:100%"></div>
+          </div>
+          <button id="btn-mic-discuss" class="btn btn-primary mic-big-btn">🎤 Bấm để nói</button>
+          <div id="discuss-listening-indicator" class="listening-indicator hidden">
+            <div class="pulse-ring"></div>
+            <span>🔴 Đang nghe...</span>
+            <button id="btn-stop-discuss" class="btn btn-sm btn-danger" style="margin-left:8px">Dừng</button>
+          </div>
         </div>
+
+        <!-- Host Action Bar -->
+        <div id="host-action-bar" class="host-action-bar hidden">
+          <button id="btn-next-speaker" class="btn btn-secondary btn-sm hidden">⏭️ Người tiếp</button>
+          <button id="btn-start-vote" class="btn btn-primary btn-sm hidden">🗳️ Bắt đầu vote</button>
+          <button id="btn-skip-vote" class="btn btn-secondary btn-sm hidden">⏩ Bỏ qua vote</button>
+        </div>
+
+        <!-- My Role Button (fixed bottom) -->
+        <button id="btn-show-my-role" class="btn btn-role-bottom">👁 Xem vai trò của tôi</button>
+
+      </div><!-- .game-bottom -->
+    </div><!-- .game-wrap -->
+
+    <!-- Role Modal Overlay -->
+    <div id="role-modal" class="role-modal hidden">
+      <div class="role-modal-overlay" id="role-modal-overlay"></div>
+      <div class="role-modal-content">
+        <div id="role-modal-card" class="role-modal-card"></div>
+        <button id="btn-close-role-modal" class="btn btn-secondary" style="margin-top:12px;width:100%">✕ Đóng</button>
       </div>
     </div>
+
   </section>
 
-  <!-- ========================================
-       VOTING SCREEN
-       ======================================== -->
+  <!-- ===== VOTING SCREEN ===== -->
   <section id="screen-voting" class="screen">
     <div class="voting-container">
       <div class="voting-card glass-card">
-        <div id="voting-content">
-          <!-- Filled by JS -->
+        <h2 class="voting-title">🗳️ Bỏ Phiếu</h2>
+        <p class="voting-subtitle">Chọn người bạn nghi ngờ và khai báo vai trò của họ</p>
+
+        <!-- Step 1: Select target -->
+        <div id="vote-step-1">
+          <div class="vote-step-label">Bước 1: Chọn người muốn tố cáo</div>
+          <div class="vote-grid" id="vote-grid"></div>
+        </div>
+
+        <!-- Step 2: Accuse role -->
+        <div id="vote-step-2" class="hidden">
+          <div class="accusation-panel glass-card">
+            <div class="accusation-header">Bạn tố <strong id="accused-name">---</strong> là:</div>
+            <div class="accusation-roles" style="grid-template-columns:1fr 1fr">
+              <button class="accusation-btn spy-btn" data-role="spy">
+                <span class="acc-icon">🕵️</span>
+                <span>Gián Điệp</span>
+              </button>
+              <button class="accusation-btn whitehat-btn" data-role="whitehat">
+                <span class="acc-icon">🎩</span>
+                <span>Mũ Trắng</span>
+              </button>
+            </div>
+            <button id="btn-cancel-vote" class="btn btn-sm btn-secondary" style="width:100%;margin-top:8px">← Chọn lại người</button>
+          </div>
+        </div>
+
+        <!-- After voted -->
+        <div id="vote-done" class="hidden">
+          <div class="voted-notice">
+            <div class="voted-icon">✅</div>
+            <p id="vote-done-text">Đã bỏ phiếu!</p>
+            <p class="sub">Chờ mọi người vote xong...</p>
+            <div id="vote-progress" style="margin-top:8px;font-size:0.85rem;color:var(--text-muted)"></div>
+          </div>
+        </div>
+
+        <!-- Eliminated can't vote -->
+        <div id="vote-eliminated-notice" class="hidden">
+          <div class="eliminated-notice">
+            <div class="eliminated-icon">💀</div>
+            <p>Bạn đã bị loại và không thể vote</p>
+            <p class="sub">Chờ kết quả...</p>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ========================================
-       REVEAL SCREEN (After voting)
-       ======================================== -->
-  <section id="screen-reveal" class="screen">
-    <div class="reveal-container">
-      <div id="reveal-content" class="glass-card" style="padding:32px">
-        <!-- Filled by JS -->
+  <!-- ===== GUESS SCREEN ===== -->
+  <section id="screen-guess" class="screen">
+    <div class="guess-container">
+      <div class="guess-card glass-card" id="guess-card">
+        <!-- Filled dynamically -->
       </div>
-      <button id="btn-continue-game" class="btn btn-primary btn-lg hidden" style="width:100%;margin-top:16px">▶️ Tiếp tục</button>
     </div>
   </section>
 
-  <!-- ========================================
-       RESULTS SCREEN (Game Over)
-       ======================================== -->
+  <!-- ===== REVEAL SCREEN ===== -->
+  <section id="screen-reveal" class="screen">
+    <div class="reveal-container">
+      <div id="reveal-content" class="glass-card" style="padding:32px"></div>
+      <button id="btn-continue-game" class="btn btn-primary btn-lg hidden" style="width:100%;margin-top:16px">▶️ Vòng tiếp theo</button>
+    </div>
+  </section>
+
+  <!-- ===== RESULTS SCREEN ===== -->
   <section id="screen-results" class="screen">
     <div class="results-container">
-      <div id="results-content">
-        <!-- Filled by JS -->
-      </div>
+      <div id="results-content"></div>
       <div class="results-actions">
         <button id="btn-play-again" class="btn btn-primary btn-lg hidden">🔄 Chơi Lại</button>
         <button id="btn-back-home" class="btn btn-secondary btn-lg">🏠 Về Trang Chủ</button>
@@ -357,9 +393,7 @@
     </div>
   </section>
 
-  <!-- ========================================
-       FIREBASE SDK (Compat CDN)
-       ======================================== -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>

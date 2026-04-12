@@ -1,206 +1,183 @@
 // ========================================
-// Game Logic Module - Spy Game
+// Game Logic Module - Spy Game (Session 2)
+// Full rewrite with new phases & vote logic
 // ========================================
 
 const Game = {
   currentRoom: null,
   isHost: false,
   listeners: [],
-  votingTimer: null,
-  discussionTimer: null,
+  speakerTimerInterval: null,
+  discussionTimerInterval: null,
 
-  /**
-   * Generate a random 6-character room code
-   */
   generateRoomCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
+    for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
     return code;
   },
 
-  /**
-   * Create a new game room
-   */
+  // ================================
+  // Room Management
+  // ================================
+
   async createRoom(settings) {
     try {
       const code = this.generateRoomCode();
       const user = Auth.currentUser;
-      
       const roomData = {
-        code: code,
+        code,
         host: user.uid,
         hostName: user.name,
-        mode: settings.mode, // 'inperson' or 'online'
+        mode: settings.mode,
         status: 'waiting',
         settings: {
           maxPlayers: settings.maxPlayers || 10,
           numSpies: settings.numSpies || 1,
           numWhiteHats: settings.numWhiteHats || 0,
-          discussionTime: settings.discussionTime || 180,
-          votingTime: settings.votingTime || 60,
-          keywordMode: settings.keywordMode || 'pair' // 'pair' or 'single'
+          discussionTime: settings.discussionTime || 120,
+          speakTime: 30,
+          keywordMode: settings.keywordMode || 'pair'
         },
         createdAt: firebase.database.ServerValue.TIMESTAMP,
         players: {}
       };
-
-      // Add host as first player
       roomData.players[user.uid] = {
         name: user.name,
         role: null,
         keyword: null,
         voted: false,
-        votedFor: null,
+        vote: null,
         eliminated: false,
         isReady: true,
         joinedAt: firebase.database.ServerValue.TIMESTAMP
       };
-
       await db.ref('rooms/' + code).set(roomData);
-      
       this.currentRoom = code;
       this.isHost = true;
-
-      return { success: true, code: code };
-    } catch (error) {
-      console.error('Create room error:', error);
+      return { success: true, code };
+    } catch (err) {
+      console.error('createRoom error:', err);
       return { success: false, error: 'Không thể tạo phòng. Thử lại.' };
     }
   },
 
-  /**
-   * Join an existing room
-   */
   async joinRoom(code) {
     try {
       code = code.toUpperCase().trim();
-      const snapshot = await db.ref('rooms/' + code).once('value');
-      const room = snapshot.val();
-
-      if (!room) {
-        return { success: false, error: 'Không tìm thấy phòng này' };
-      }
-
-      if (room.status !== 'waiting') {
-        return { success: false, error: 'Phòng đã bắt đầu chơi rồi' };
-      }
-
+      const snap = await db.ref('rooms/' + code).once('value');
+      const room = snap.val();
+      if (!room) return { success: false, error: 'Không tìm thấy phòng này' };
+      if (room.status !== 'waiting') return { success: false, error: 'Phòng đã bắt đầu chơi rồi' };
       const playerCount = room.players ? Object.keys(room.players).length : 0;
-      if (playerCount >= room.settings.maxPlayers) {
-        return { success: false, error: 'Phòng đã đầy' };
-      }
-
+      if (playerCount >= room.settings.maxPlayers) return { success: false, error: 'Phòng đã đầy' };
       const user = Auth.currentUser;
-
-      // Check if already in room
       if (room.players && room.players[user.uid]) {
         this.currentRoom = code;
         this.isHost = room.host === user.uid;
-        return { success: true, code: code };
+        return { success: true, code };
       }
-
-      // Add player to room
       await db.ref('rooms/' + code + '/players/' + user.uid).set({
         name: user.name,
         role: null,
         keyword: null,
         voted: false,
-        votedFor: null,
+        vote: null,
         eliminated: false,
         isReady: false,
         joinedAt: firebase.database.ServerValue.TIMESTAMP
       });
-
       this.currentRoom = code;
       this.isHost = room.host === user.uid;
-
-      return { success: true, code: code };
-    } catch (error) {
-      console.error('Join room error:', error);
+      return { success: true, code };
+    } catch (err) {
+      console.error('joinRoom error:', err);
       return { success: false, error: 'Không thể tham gia phòng' };
     }
   },
 
-  /**
-   * Leave the current room
-   */
   async leaveRoom() {
     if (!this.currentRoom) return;
-
     try {
       const user = Auth.currentUser;
       if (!user) return;
-
-      // Remove listeners
       this.removeAllListeners();
-
-      // Clear timers
-      if (this.votingTimer) clearInterval(this.votingTimer);
-      if (this.discussionTimer) clearInterval(this.discussionTimer);
-
+      this.clearTimers();
       if (this.isHost) {
-        // Host leaves = delete room
         await db.ref('rooms/' + this.currentRoom).remove();
       } else {
-        // Player leaves = remove from room
         await db.ref('rooms/' + this.currentRoom + '/players/' + user.uid).remove();
       }
-
       this.currentRoom = null;
       this.isHost = false;
-    } catch (error) {
-      console.error('Leave room error:', error);
+    } catch (err) {
+      console.error('leaveRoom error:', err);
     }
   },
 
+  clearTimers() {
+    if (this.speakerTimerInterval) { clearInterval(this.speakerTimerInterval); this.speakerTimerInterval = null; }
+    if (this.discussionTimerInterval) { clearInterval(this.discussionTimerInterval); this.discussionTimerInterval = null; }
+  },
+
+  // ================================
+  // Game Start
+  // ================================
+
   /**
-   * Start the game (host only)
+   * Start game (host only)
+   * @param {Object|null} customKeywords - { civilian, spy, category } for custom mode
    */
-  async startGame() {
+  async startGame(customKeywords = null) {
     if (!this.isHost || !this.currentRoom) return { success: false };
-
     try {
-      const snapshot = await db.ref('rooms/' + this.currentRoom).once('value');
-      const room = snapshot.val();
+      const snap = await db.ref('rooms/' + this.currentRoom).once('value');
+      const room = snap.val();
       const players = room.players;
-      const playerIds = Object.keys(players);
-      const numPlayers = playerIds.length;
+      const allPlayerIds = Object.keys(players);
+      const isOnlineMode = room.mode === 'online';
 
-      if (numPlayers < 3) {
-        return { success: false, error: 'Cần ít nhất 3 người chơi' };
-      }
+      // In non-online modes, host is observer (not a participant)
+      const participantIds = isOnlineMode
+        ? allPlayerIds
+        : allPlayerIds.filter(id => id !== room.host);
+      const numParticipants = participantIds.length;
 
-      const numSpies = Math.min(room.settings.numSpies, Math.floor(numPlayers / 3));
-      const numWhiteHats = Math.min(room.settings.numWhiteHats || 0, Math.floor((numPlayers - numSpies) / 3));
+      if (numParticipants < 3) return { success: false, error: `Cần ít nhất 3 người chơi${isOnlineMode ? '' : ' (không tính quản trò)'}` };
 
-      // Generate keywords
+      const numSpies = Math.min(room.settings.numSpies, Math.floor(numParticipants / 3));
+      const numWhiteHats = Math.min(room.settings.numWhiteHats || 0, Math.floor((numParticipants - numSpies) / 3));
+
+      // Get keywords
       let keywordData;
-      if (room.settings.keywordMode === 'pair') {
+      if (room.mode === 'custom' && customKeywords) {
+        keywordData = {
+          civilian: customKeywords.civilian.trim(),
+          spy: customKeywords.spy?.trim() || '???',
+          category: customKeywords.category?.trim() || 'Tùy chỉnh'
+        };
+      } else if (room.settings.keywordMode === 'pair') {
         keywordData = await generateKeywordPair();
       } else {
-        const singleData = await generateSingleKeyword();
-        keywordData = {
-          civilian: singleData.keyword,
-          spy: null,
-          category: singleData.category
-        };
+        const single = await generateSingleKeyword();
+        keywordData = { civilian: single.keyword, spy: '???', category: single.category };
       }
 
-      // Randomly assign spies, then white hats, rest are civilians
-      const shuffled = [...playerIds].sort(() => Math.random() - 0.5);
+      // Shuffle PARTICIPANTS only and assign roles
+      const shuffled = [...participantIds].sort(() => Math.random() - 0.5);
       const spyIds = shuffled.slice(0, numSpies);
       const whiteHatIds = shuffled.slice(numSpies, numSpies + numWhiteHats);
 
-      // Update each player's role and keyword
+      // Speaking order: participants only
+      const speakingOrder = [...participantIds].sort(() => Math.random() - 0.5);
+
       const updates = {};
-      playerIds.forEach(id => {
+
+      // Assign roles to participants
+      participantIds.forEach(id => {
         const isSpy = spyIds.includes(id);
         const isWhiteHat = whiteHatIds.includes(id);
         let role, keyword;
-
         if (isSpy) {
           role = 'spy';
           keyword = keywordData.spy || '???';
@@ -211,236 +188,432 @@ const Game = {
           role = 'civilian';
           keyword = keywordData.civilian;
         }
-
         updates[`rooms/${this.currentRoom}/players/${id}/role`] = role;
         updates[`rooms/${this.currentRoom}/players/${id}/keyword`] = keyword;
         updates[`rooms/${this.currentRoom}/players/${id}/voted`] = false;
-        updates[`rooms/${this.currentRoom}/players/${id}/votedFor`] = null;
+        updates[`rooms/${this.currentRoom}/players/${id}/vote`] = null;
         updates[`rooms/${this.currentRoom}/players/${id}/eliminated`] = false;
       });
 
-      // Update room status
+      // Mark host as observer in non-online modes
+      if (!isOnlineMode) {
+        updates[`rooms/${this.currentRoom}/players/${room.host}/role`] = 'host';
+        updates[`rooms/${this.currentRoom}/players/${room.host}/keyword`] = keywordData.civilian;
+        updates[`rooms/${this.currentRoom}/players/${room.host}/voted`] = true; // host doesn't vote
+        updates[`rooms/${this.currentRoom}/players/${room.host}/vote`] = null;
+        updates[`rooms/${this.currentRoom}/players/${room.host}/eliminated`] = true; // excluded from game
+      }
+
+      // Determine phase based on mode
+      const phase = isOnlineMode ? 'speaking' : 'freeplay';
+
       updates[`rooms/${this.currentRoom}/status`] = 'playing';
+      updates[`rooms/${this.currentRoom}/phase`] = phase;
       updates[`rooms/${this.currentRoom}/keyword`] = keywordData.civilian;
       updates[`rooms/${this.currentRoom}/spyKeyword`] = keywordData.spy || '???';
       updates[`rooms/${this.currentRoom}/category`] = keywordData.category;
       updates[`rooms/${this.currentRoom}/round`] = 1;
       updates[`rooms/${this.currentRoom}/spies`] = spyIds;
       updates[`rooms/${this.currentRoom}/whiteHats`] = whiteHatIds;
+      updates[`rooms/${this.currentRoom}/pendingElimination`] = null;
+      updates[`rooms/${this.currentRoom}/lastEliminated`] = null;
+      updates[`rooms/${this.currentRoom}/winner`] = null;
+      updates[`rooms/${this.currentRoom}/winReason`] = null;
+      updates[`rooms/${this.currentRoom}/currentSpeech`] = null;
+
+      if (isOnlineMode) {
+        updates[`rooms/${this.currentRoom}/speakingOrder`] = speakingOrder;
+        updates[`rooms/${this.currentRoom}/currentSpeakerIndex`] = 0;
+        updates[`rooms/${this.currentRoom}/speakerStartTime`] = firebase.database.ServerValue.TIMESTAMP;
+      } else {
+        updates[`rooms/${this.currentRoom}/speakingOrder`] = null;
+        updates[`rooms/${this.currentRoom}/currentSpeakerIndex`] = null;
+        updates[`rooms/${this.currentRoom}/speakerStartTime`] = null;
+      }
 
       await db.ref().update(updates);
-
       return { success: true };
-    } catch (error) {
-      console.error('Start game error:', error);
+    } catch (err) {
+      console.error('startGame error:', err);
       return { success: false, error: 'Không thể bắt đầu game' };
     }
   },
 
+  // ================================
+  // Speaking Phase
+  // ================================
+
   /**
-   * Start voting round (host only)
+   * Advance to next speaker (host only)
    */
+  async nextSpeaker() {
+    if (!this.isHost || !this.currentRoom) return;
+    const snap = await db.ref('rooms/' + this.currentRoom).once('value');
+    const room = snap.val();
+    const speakingOrder = room.speakingOrder || [];
+
+    // Filter out eliminated players in order
+    const aliveOrdering = speakingOrder.filter(uid => !room.players[uid]?.eliminated);
+    const currentSpeakerUid = speakingOrder[room.currentSpeakerIndex || 0];
+    const posInAlive = aliveOrdering.indexOf(currentSpeakerUid);
+    const nextPosInAlive = posInAlive + 1;
+
+    if (nextPosInAlive >= aliveOrdering.length) {
+      // All players have spoken → go to discussion
+      await this.startDiscussion();
+    } else {
+      const nextUid = aliveOrdering[nextPosInAlive];
+      const nextIdxInOriginal = speakingOrder.indexOf(nextUid);
+      await db.ref('rooms/' + this.currentRoom).update({
+        currentSpeakerIndex: nextIdxInOriginal,
+        speakerStartTime: firebase.database.ServerValue.TIMESTAMP,
+        currentSpeech: null
+      });
+    }
+  },
+
+  /**
+   * Push current speech text to Firebase (syncs to all clients)
+   */
+  async sendSpeech(text, isFinal, speakerUid, speakerName) {
+    if (!this.currentRoom || !text) return;
+    await db.ref('rooms/' + this.currentRoom + '/currentSpeech').set({
+      speakerUid,
+      speakerName,
+      text,
+      isFinal,
+      ts: Date.now()
+    });
+  },
+
+  // ================================
+  // Discussion Phase
+  // ================================
+
+  async startDiscussion() {
+    if (!this.isHost || !this.currentRoom) return;
+    await db.ref('rooms/' + this.currentRoom).update({
+      phase: 'discussion',
+      discussionStartTime: firebase.database.ServerValue.TIMESTAMP,
+      currentSpeech: null
+    });
+  },
+
+  // ================================
+  // Voting Phase
+  // ================================
+
   async startVoting() {
     if (!this.isHost || !this.currentRoom) return;
-
-    try {
-      const snapshot = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
-      const players = snapshot.val();
-      
-      // Reset all votes
-      const updates = {};
-      Object.keys(players).forEach(id => {
-        if (!players[id].eliminated) {
-          updates[`rooms/${this.currentRoom}/players/${id}/voted`] = false;
-          updates[`rooms/${this.currentRoom}/players/${id}/votedFor`] = null;
-        }
-      });
-      updates[`rooms/${this.currentRoom}/status`] = 'voting';
-
-      await db.ref().update(updates);
-    } catch (error) {
-      console.error('Start voting error:', error);
-    }
-  },
-
-  /**
-   * Submit a vote
-   */
-  async submitVote(targetId) {
-    if (!this.currentRoom) return;
-
-    const user = Auth.currentUser;
-    try {
-      await db.ref(`rooms/${this.currentRoom}/players/${user.uid}`).update({
-        voted: true,
-        votedFor: targetId
-      });
-
-      // Check if all players have voted
-      const snapshot = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
-      const players = snapshot.val();
-      const activePlayers = Object.entries(players).filter(([_, p]) => !p.eliminated);
-      const allVoted = activePlayers.every(([_, p]) => p.voted);
-
-      if (allVoted) {
-        await this.calculateVoteResults();
+    const snap = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
+    const players = snap.val();
+    const updates = {};
+    Object.keys(players).forEach(id => {
+      if (!players[id].eliminated) {
+        updates[`rooms/${this.currentRoom}/players/${id}/voted`] = false;
+        updates[`rooms/${this.currentRoom}/players/${id}/vote`] = null;
       }
-    } catch (error) {
-      console.error('Vote error:', error);
-    }
+    });
+    updates[`rooms/${this.currentRoom}/phase`] = 'voting';
+    updates[`rooms/${this.currentRoom}/status`] = 'voting';
+    updates[`rooms/${this.currentRoom}/currentSpeech`] = null;
+    await db.ref().update(updates);
   },
 
   /**
-   * Calculate vote results
+   * Submit vote with role accusation
+   * @param {string} targetId - UID of the person being voted off
+   * @param {string} accusedRole - 'spy' | 'whitehat' | 'civilian'
+   */
+  async submitVote(targetId, accusedRole) {
+    if (!this.currentRoom) return;
+    const user = Auth.currentUser;
+    await db.ref(`rooms/${this.currentRoom}/players/${user.uid}`).update({
+      voted: true,
+      vote: { targetId, accusedRole }
+    });
+    // Check if all active players have voted
+    const snap = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
+    const players = snap.val();
+    const active = Object.entries(players).filter(([, p]) => !p.eliminated);
+    const allVoted = active.every(([, p]) => p.voted);
+    if (allVoted && this.isHost) await this.calculateVoteResults();
+  },
+
+  // ================================
+  // Vote Result Calculation
+  // ================================
+
+  /**
+   * Calculate who gets eliminated and handle misidentification rule.
+   *
+   * Rules:
+   * 1. Count votes → find most-voted player
+   * 2. Among votes cast for that player, find majority role accusation
+   * 3. Compare majority accusedRole vs their TRUE role:
+   *    - Spy/WhiteHat + MISIDENTIFIED → that player's team wins IMMEDIATELY
+   *    - Civilian → eliminated (no guess)
+   *    - Spy/WhiteHat + correctly identified → guess phase (30s to guess civilian keyword)
    */
   async calculateVoteResults() {
     try {
-      const snapshot = await db.ref('rooms/' + this.currentRoom).once('value');
-      const room = snapshot.val();
+      const snap = await db.ref('rooms/' + this.currentRoom).once('value');
+      const room = snap.val();
       const players = room.players;
 
-      // Count votes
-      const voteCounts = {};
-      Object.entries(players).forEach(([id, player]) => {
-        if (!player.eliminated && player.votedFor) {
-          voteCounts[player.votedFor] = (voteCounts[player.votedFor] || 0) + 1;
+      // Count votes per target
+      const voteTally = {}; // targetId → [{ accusedRole, voterId }]
+      Object.entries(players).forEach(([id, p]) => {
+        if (!p.eliminated && p.voted && p.vote) {
+          const { targetId, accusedRole } = p.vote;
+          if (!voteTally[targetId]) voteTally[targetId] = [];
+          voteTally[targetId].push({ accusedRole, voterId: id });
         }
       });
 
-      // Find the player with most votes
-      let maxVotes = 0;
-      let eliminatedId = null;
-      Object.entries(voteCounts).forEach(([id, count]) => {
-        if (count > maxVotes) {
-          maxVotes = count;
-          eliminatedId = id;
-        }
+      // Find most-voted player (random tiebreak)
+      let maxVotes = 0, topCandidates = [];
+      Object.entries(voteTally).forEach(([id, votes]) => {
+        if (votes.length > maxVotes) { maxVotes = votes.length; topCandidates = [id]; }
+        else if (votes.length === maxVotes) topCandidates.push(id);
       });
 
-      if (eliminatedId) {
-        await db.ref(`rooms/${this.currentRoom}/players/${eliminatedId}/eliminated`).set(true);
+      if (topCandidates.length === 0) {
+        // No votes → just continue
+        await this.continueGame();
+        return;
       }
 
-      // Check win condition
-      const spyIds = room.spies || [];
-      const whiteHatIds = room.whiteHats || [];
-      const remainingSpies = spyIds.filter(id => !players[id]?.eliminated && id !== eliminatedId);
-      // White hats count with civilians for win/lose
-      const remainingNonSpies = Object.entries(players)
-        .filter(([id, p]) => !p.eliminated && id !== eliminatedId && !spyIds.includes(id))
-        .length;
+      const eliminatedId = topCandidates[Math.floor(Math.random() * topCandidates.length)];
+      const eliminatedPlayer = players[eliminatedId];
+      const trueRole = eliminatedPlayer.role;
 
-      let gameOver = false;
-      let winner = null;
+      // Find majority accusedRole for this target
+      const accusationVotes = voteTally[eliminatedId] || [];
+      const accusationCount = {};
+      accusationVotes.forEach(v => {
+        accusationCount[v.accusedRole] = (accusationCount[v.accusedRole] || 0) + 1;
+      });
+      const majorityAccusedRole = Object.entries(accusationCount)
+        .sort((a, b) => b[1] - a[1])[0]?.[0] || 'civilian';
 
-      if (remainingSpies.length === 0) {
-        // All spies eliminated - civilians & white hats win
-        gameOver = true;
-        winner = 'civilian';
-      } else if (remainingSpies.length >= remainingNonSpies) {
-        // Spies outnumber non-spies - spies win
-        gameOver = true;
-        winner = 'spy';
-      }
+      const updates = {
+        [`rooms/${this.currentRoom}/lastEliminated`]: eliminatedId,
+        [`rooms/${this.currentRoom}/lastVoteCounts`]: Object.fromEntries(
+          Object.entries(voteTally).map(([k, v]) => [k, v.length])
+        ),
+        [`rooms/${this.currentRoom}/lastAccusedRole`]: majorityAccusedRole,
+        [`rooms/${this.currentRoom}/lastTrueRole`]: trueRole
+      };
 
-      const updates = {};
-      updates[`rooms/${this.currentRoom}/lastEliminated`] = eliminatedId;
-      updates[`rooms/${this.currentRoom}/lastVoteCounts`] = voteCounts;
-
-      if (gameOver) {
+      // ── MISIDENTIFICATION RULE ──────────────────────────────────
+      // If Spy or WhiteHat is voted off but majority accused the WRONG role → immediate win
+      if ((trueRole === 'spy' || trueRole === 'whitehat') && majorityAccusedRole !== trueRole) {
+        updates[`rooms/${this.currentRoom}/players/${eliminatedId}/eliminated`] = true;
         updates[`rooms/${this.currentRoom}/status`] = 'finished';
-        updates[`rooms/${this.currentRoom}/winner`] = winner;
-      } else {
-        updates[`rooms/${this.currentRoom}/status`] = 'revealing';
-        updates[`rooms/${this.currentRoom}/round`] = (room.round || 1) + 1;
+        updates[`rooms/${this.currentRoom}/winner`] = trueRole;
+        updates[`rooms/${this.currentRoom}/winReason`] = 'misidentified';
+        await db.ref().update(updates);
+        return;
       }
 
+      // ── CIVILIAN CORRECTLY (OR INCORRECTLY) VOTED ──────────────
+      if (trueRole === 'civilian') {
+        updates[`rooms/${this.currentRoom}/players/${eliminatedId}/eliminated`] = true;
+        const outcome = this._checkWinAfterElimination(room, eliminatedId);
+        if (outcome) {
+          updates[`rooms/${this.currentRoom}/status`] = 'finished';
+          updates[`rooms/${this.currentRoom}/winner`] = outcome.winner;
+          updates[`rooms/${this.currentRoom}/winReason`] = outcome.reason;
+        } else {
+          updates[`rooms/${this.currentRoom}/status`] = 'revealing';
+          updates[`rooms/${this.currentRoom}/round`] = (room.round || 1) + 1;
+        }
+        await db.ref().update(updates);
+        return;
+      }
+
+      // ── SPY or WHITEHAT CORRECTLY IDENTIFIED → GUESS PHASE ──────
+      updates[`rooms/${this.currentRoom}/status`] = 'guessing';
+      updates[`rooms/${this.currentRoom}/pendingElimination`] = {
+        playerId: eliminatedId,
+        trueRole,
+        accusedRole: majorityAccusedRole,
+        guessDeadline: Date.now() + 31000
+      };
       await db.ref().update(updates);
-    } catch (error) {
-      console.error('Calculate vote results error:', error);
+    } catch (err) {
+      console.error('calculateVoteResults error:', err);
+    }
+  },
+
+  // ================================
+  // Guess Phase
+  // ================================
+
+  /**
+   * Eliminated spy/whitehat submits their guess for the civilian keyword.
+   * Anyone can call this (only the eliminated player should via UI).
+   */
+  async submitGuess(word) {
+    if (!this.currentRoom) return;
+    try {
+      const snap = await db.ref('rooms/' + this.currentRoom).once('value');
+      const room = snap.val();
+      const pending = room.pendingElimination;
+      if (!pending) return;
+
+      const normalizedGuess = word.trim().toLowerCase().normalize('NFC');
+      const normalizedKeyword = (room.keyword || '').trim().toLowerCase().normalize('NFC');
+      const isCorrect = normalizedGuess === normalizedKeyword;
+
+      const updates = {
+        [`rooms/${this.currentRoom}/players/${pending.playerId}/eliminated`]: true,
+        [`rooms/${this.currentRoom}/pendingElimination`]: null,
+        [`rooms/${this.currentRoom}/lastGuess`]: word.trim(),
+        [`rooms/${this.currentRoom}/lastGuessCorrect`]: isCorrect
+      };
+
+      if (isCorrect) {
+        // Correct guess → Spy or WhiteHat wins
+        updates[`rooms/${this.currentRoom}/status`] = 'finished';
+        updates[`rooms/${this.currentRoom}/winner`] = pending.trueRole;
+        updates[`rooms/${this.currentRoom}/winReason`] = 'correct_guess';
+      } else {
+        // Wrong guess → eliminate + check win
+        const outcome = this._checkWinAfterElimination(room, pending.playerId);
+        if (outcome) {
+          updates[`rooms/${this.currentRoom}/status`] = 'finished';
+          updates[`rooms/${this.currentRoom}/winner`] = outcome.winner;
+          updates[`rooms/${this.currentRoom}/winReason`] = outcome.reason;
+        } else {
+          // Show reveal of wrong guess, then continue
+          updates[`rooms/${this.currentRoom}/status`] = 'revealing';
+          updates[`rooms/${this.currentRoom}/round`] = (room.round || 1) + 1;
+        }
+      }
+      await db.ref().update(updates);
+    } catch (err) {
+      console.error('submitGuess error:', err);
     }
   },
 
   /**
-   * Continue to next round after reveal
+   * Check win condition after a player is eliminated.
+   * @returns {winner, reason} or null if game continues
+   */
+  _checkWinAfterElimination(room, justEliminatedId) {
+    const players = room.players;
+    const spyIds = room.spies || [];
+    const whiteHatIds = room.whiteHats || [];
+
+    const isEliminated = id => id === justEliminatedId || players[id]?.eliminated;
+
+    // Are all spies and whitehats eliminated?
+    const allSpecialGone = [...spyIds, ...whiteHatIds].every(isEliminated);
+    if (allSpecialGone) {
+      return { winner: 'civilian', reason: 'all_eliminated' };
+    }
+
+    // Do spies outnumber non-spies?
+    const aliveSpies = spyIds.filter(id => !isEliminated(id));
+    const aliveNonSpies = Object.entries(players)
+      .filter(([id, p]) => !isEliminated(id) && !spyIds.includes(id));
+
+    if (aliveSpies.length > 0 && aliveSpies.length >= aliveNonSpies.length) {
+      return { winner: 'spy', reason: 'majority' };
+    }
+    return null;
+  },
+
+  // ================================
+  // Continue / Reset
+  // ================================
+
+  /**
+   * Continue to next round (host only)
    */
   async continueGame() {
     if (!this.isHost || !this.currentRoom) return;
-    await db.ref(`rooms/${this.currentRoom}/status`).set('playing');
+    const snap = await db.ref('rooms/' + this.currentRoom).once('value');
+    const room = snap.val();
+    const isOnlineMode = room.mode === 'online';
+    const alivePlayers = Object.entries(room.players)
+      .filter(([, p]) => !p.eliminated)
+      .map(([id]) => id)
+      .sort(() => Math.random() - 0.5);
+
+    const updateData = {
+      status: 'playing',
+      phase: isOnlineMode ? 'speaking' : 'freeplay',
+      currentSpeech: null,
+      pendingElimination: null
+    };
+
+    if (isOnlineMode) {
+      updateData.speakingOrder = alivePlayers;
+      updateData.currentSpeakerIndex = 0;
+      updateData.speakerStartTime = firebase.database.ServerValue.TIMESTAMP;
+    }
+
+    await db.ref('rooms/' + this.currentRoom).update(updateData);
   },
 
-  /**
-   * Send a chat message (online mode)
-   */
-  async sendMessage(text) {
-    if (!this.currentRoom || !text.trim()) return;
-
-    const user = Auth.currentUser;
-    await db.ref(`rooms/${this.currentRoom}/messages`).push({
-      userId: user.uid,
-      name: user.name,
-      text: text.trim(),
-      timestamp: firebase.database.ServerValue.TIMESTAMP
+  async resetGame() {
+    if (!this.isHost || !this.currentRoom) return;
+    const snap = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
+    const players = snap.val();
+    const updates = {};
+    Object.keys(players).forEach(id => {
+      updates[`rooms/${this.currentRoom}/players/${id}/role`] = null;
+      updates[`rooms/${this.currentRoom}/players/${id}/keyword`] = null;
+      updates[`rooms/${this.currentRoom}/players/${id}/voted`] = false;
+      updates[`rooms/${this.currentRoom}/players/${id}/vote`] = null;
+      updates[`rooms/${this.currentRoom}/players/${id}/eliminated`] = false;
     });
+    const fields = ['status', 'phase', 'keyword', 'spyKeyword', 'category', 'round', 'spies', 'whiteHats',
+      'winner', 'winReason', 'speakingOrder', 'currentSpeakerIndex', 'speakerStartTime', 'discussionStartTime',
+      'currentSpeech', 'pendingElimination', 'lastEliminated', 'lastVoteCounts', 'lastAccusedRole',
+      'lastTrueRole', 'lastGuess', 'lastGuessCorrect'];
+    fields.forEach(f => { updates[`rooms/${this.currentRoom}/${f}`] = null; });
+    updates[`rooms/${this.currentRoom}/status`] = 'waiting';
+    await db.ref().update(updates);
   },
 
-  /**
-   * Listen to room changes
-   */
+  // ================================
+  // Firebase Listeners
+  // ================================
+
   listenToRoom(callback) {
     if (!this.currentRoom) return;
     const ref = db.ref('rooms/' + this.currentRoom);
-    ref.on('value', (snapshot) => {
-      callback(snapshot.val());
-    });
+    ref.on('value', snap => callback(snap.val()));
     this.listeners.push(ref);
   },
 
-  /**
-   * Listen to chat messages
-   */
-  listenToMessages(callback) {
-    if (!this.currentRoom) return;
-    const ref = db.ref('rooms/' + this.currentRoom + '/messages');
-    ref.orderByChild('timestamp').on('child_added', (snapshot) => {
-      callback({ id: snapshot.key, ...snapshot.val() });
-    });
-    this.listeners.push(ref);
-  },
-
-  /**
-   * Remove all Firebase listeners
-   */
   removeAllListeners() {
     this.listeners.forEach(ref => ref.off());
     this.listeners = [];
   },
 
-  /**
-   * Add a bot player for testing (host only)
-   */
+  // ================================
+  // Bot Helpers (Testing)
+  // ================================
+
   async addBotPlayer() {
     if (!this.isHost || !this.currentRoom) return;
-
-    const botNames = ['Bot An', 'Bot Bình', 'Bot Chi', 'Bot Dung', 'Bot Em',
-                      'Bot Phúc', 'Bot Giang', 'Bot Hà', 'Bot Khánh', 'Bot Linh',
-                      'Bot Minh', 'Bot Ngọc', 'Bot Oanh', 'Bot Phong'];
-
-    const snapshot = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
-    const players = snapshot.val() || {};
-    const existingCount = Object.keys(players).length;
-
-    if (existingCount >= 15) return;
-
+    const botNames = ['Bot An', 'Bot Bình', 'Bot Chi', 'Bot Dung', 'Bot Em', 'Bot Phúc', 'Bot Giang', 'Bot Hà', 'Bot Khánh', 'Bot Linh'];
+    const snap = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
+    const players = snap.val() || {};
+    const count = Object.keys(players).length;
+    if (count >= 15) return;
     const botId = 'bot_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-    const botName = botNames[existingCount % botNames.length];
-
     await db.ref('rooms/' + this.currentRoom + '/players/' + botId).set({
-      name: botName,
+      name: botNames[count % botNames.length],
       role: null,
       keyword: null,
       voted: false,
-      votedFor: null,
+      vote: null,
       eliminated: false,
       isReady: true,
       isBot: true,
@@ -448,78 +621,33 @@ const Game = {
     });
   },
 
-  /**
-   * Auto-vote for bots (random vote)
-   */
   async autoBotVote() {
     if (!this.currentRoom) return;
-
-    const snapshot = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
-    const players = snapshot.val() || {};
-
-    const activePlayers = Object.entries(players).filter(([_, p]) => !p.eliminated);
-    const bots = activePlayers.filter(([id, p]) => p.isBot && !p.voted);
-    const targets = activePlayers.map(([id]) => id);
-
-    for (const [botId, bot] of bots) {
-      // Bot votes randomly (excluding self)
+    const snap = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
+    const players = snap.val() || {};
+    const active = Object.entries(players).filter(([, p]) => !p.eliminated);
+    const bots = active.filter(([, p]) => p.isBot && !p.voted);
+    const targets = active.map(([id]) => id);
+    const roles = ['spy', 'whitehat', 'civilian'];
+    for (const [botId] of bots) {
       const validTargets = targets.filter(id => id !== botId);
       const target = validTargets[Math.floor(Math.random() * validTargets.length)];
+      const accusedRole = roles[Math.floor(Math.random() * roles.length)];
       if (target) {
         await db.ref(`rooms/${this.currentRoom}/players/${botId}`).update({
           voted: true,
-          votedFor: target
+          vote: { targetId: target, accusedRole }
         });
       }
     }
-
-    // Check if all players have voted
-    const updatedSnapshot = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
-    const updatedPlayers = updatedSnapshot.val();
-    const allActive = Object.entries(updatedPlayers).filter(([_, p]) => !p.eliminated);
-    const allVoted = allActive.every(([_, p]) => p.voted);
-
-    if (allVoted) {
+    // Re-check if all voted
+    const updSnap = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
+    const updPlayers = updSnap.val();
+    const updActive = Object.entries(updPlayers).filter(([, p]) => !p.eliminated);
+    if (updActive.every(([, p]) => p.voted) && this.isHost) {
       await this.calculateVoteResults();
-    }
-  },
-
-  /**
-   * Reset game for new round (host only)
-   */
-  async resetGame() {
-    if (!this.isHost || !this.currentRoom) return;
-
-    try {
-      const snapshot = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
-      const players = snapshot.val();
-
-      const updates = {};
-      Object.keys(players).forEach(id => {
-        updates[`rooms/${this.currentRoom}/players/${id}/role`] = null;
-        updates[`rooms/${this.currentRoom}/players/${id}/keyword`] = null;
-        updates[`rooms/${this.currentRoom}/players/${id}/voted`] = false;
-        updates[`rooms/${this.currentRoom}/players/${id}/votedFor`] = null;
-        updates[`rooms/${this.currentRoom}/players/${id}/eliminated`] = false;
-      });
-
-      updates[`rooms/${this.currentRoom}/status`] = 'waiting';
-      updates[`rooms/${this.currentRoom}/keyword`] = null;
-      updates[`rooms/${this.currentRoom}/spyKeyword`] = null;
-      updates[`rooms/${this.currentRoom}/category`] = null;
-      updates[`rooms/${this.currentRoom}/round`] = null;
-      updates[`rooms/${this.currentRoom}/spies`] = null;
-      updates[`rooms/${this.currentRoom}/whiteHats`] = null;
-      updates[`rooms/${this.currentRoom}/winner`] = null;
-      updates[`rooms/${this.currentRoom}/lastEliminated`] = null;
-      updates[`rooms/${this.currentRoom}/lastVoteCounts`] = null;
-      updates[`rooms/${this.currentRoom}/messages`] = null;
-
-      await db.ref().update(updates);
-    } catch (error) {
-      console.error('Reset game error:', error);
     }
   }
 };
 
-console.log('✅ Game module loaded');
+console.log('✅ Game module loaded (v2 - with vote accusation & guess phase)');
