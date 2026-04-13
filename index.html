@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="SPY GAME - Ai Là Gián Điệp? Chơi online với mic, buộc tội vai trò, luật chơi mới cực thú vị!">
+  <meta name="description"
+    content="SPY GAME - Ai Là Gián Điệp? Chơi online với mic, buộc tội vai trò, luật chơi mới cực thú vị!">
   <meta name="theme-color" content="#06060f">
   <title>🕵️ SPY GAME - Ai Là Gián Điệp</title>
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
 </head>
+
 <body>
 
   <div id="toast-container"></div>
@@ -18,7 +22,9 @@
     <div class="loading-content">
       <div class="loading-logo">🕵️</div>
       <div class="loading-title">SPY GAME</div>
-      <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+      <div class="loading-bar">
+        <div class="loading-bar-fill"></div>
+      </div>
       <div id="loading-status">Đang tải...</div>
     </div>
   </section>
@@ -36,14 +42,19 @@
         <button class="auth-tab" data-tab="signup">Đăng ký</button>
       </div>
       <form id="login-form" class="auth-form">
-        <div class="input-group"><span class="input-icon">📧</span><input type="email" id="login-email" placeholder="Email" required autocomplete="email"></div>
-        <div class="input-group"><span class="input-icon">🔒</span><input type="password" id="login-password" placeholder="Mật khẩu" required minlength="6" autocomplete="current-password"></div>
+        <div class="input-group"><span class="input-icon">📧</span><input type="email" id="login-email"
+            placeholder="Email" required autocomplete="email"></div>
+        <div class="input-group"><span class="input-icon">🔒</span><input type="password" id="login-password"
+            placeholder="Mật khẩu" required minlength="6" autocomplete="current-password"></div>
         <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Đăng nhập</button>
       </form>
       <form id="signup-form" class="auth-form hidden">
-        <div class="input-group"><span class="input-icon">👤</span><input type="text" id="signup-name" placeholder="Tên hiển thị" required minlength="2" maxlength="20" autocomplete="name"></div>
-        <div class="input-group"><span class="input-icon">📧</span><input type="email" id="signup-email" placeholder="Email" required autocomplete="email"></div>
-        <div class="input-group"><span class="input-icon">🔒</span><input type="password" id="signup-password" placeholder="Mật khẩu (6+ ký tự)" required minlength="6" autocomplete="new-password"></div>
+        <div class="input-group"><span class="input-icon">👤</span><input type="text" id="signup-name"
+            placeholder="Tên hiển thị" required minlength="2" maxlength="20" autocomplete="name"></div>
+        <div class="input-group"><span class="input-icon">📧</span><input type="email" id="signup-email"
+            placeholder="Email" required autocomplete="email"></div>
+        <div class="input-group"><span class="input-icon">🔒</span><input type="password" id="signup-password"
+            placeholder="Mật khẩu (6+ ký tự)" required minlength="6" autocomplete="new-password"></div>
         <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Đăng ký</button>
       </form>
       <div id="auth-error" class="hidden"></div>
@@ -114,19 +125,23 @@
         </div>
         <form id="create-room-form">
           <div class="setting-group">
-            <div class="setting-label"><span>Số người chơi tối đa</span><span class="setting-value" id="players-value">10</span></div>
+            <div class="setting-label"><span>Số người chơi tối đa</span><span class="setting-value"
+                id="players-value">10</span></div>
             <input type="range" id="setting-players" min="3" max="15" value="10">
           </div>
           <div class="setting-group">
-            <div class="setting-label"><span>Số gián điệp 🕵️</span><span class="setting-value" id="spies-value">1</span></div>
+            <div class="setting-label"><span>Số gián điệp 🕵️</span><span class="setting-value"
+                id="spies-value">1</span></div>
             <input type="range" id="setting-spies" min="1" max="4" value="1">
           </div>
           <div class="setting-group">
-            <div class="setting-label"><span>Số mũ trắng 🎩</span><span class="setting-value" id="whitehats-value">0</span></div>
+            <div class="setting-label"><span>Số mũ trắng 🎩</span><span class="setting-value"
+                id="whitehats-value">0</span></div>
             <input type="range" id="setting-whitehats" min="0" max="3" value="0">
           </div>
           <div class="setting-group">
-            <div class="setting-label"><span>Thời gian thảo luận (giây)</span><span class="setting-value" id="discussion-value">120</span></div>
+            <div class="setting-label"><span>Thời gian thảo luận (giây)</span><span class="setting-value"
+                id="discussion-value">120</span></div>
             <input type="range" id="setting-discussion" min="30" max="300" step="15" value="120">
           </div>
           <div id="keyword-mode-setting" class="setting-group">
@@ -175,7 +190,9 @@
         </div>
         <button id="btn-copy-code" class="btn btn-sm btn-secondary" style="margin-top:12px">📋 Copy mã</button>
       </div>
-      <div class="waiting-header"><h3>Người chơi trong phòng</h3></div>
+      <div class="waiting-header">
+        <h3>Người chơi trong phòng</h3>
+      </div>
       <div id="players-list"></div>
       <div id="test-controls" class="hidden" style="margin-bottom:12px">
         <div class="game-section-title">🧪 Chế độ test</div>
@@ -197,7 +214,8 @@
     <div class="form-container">
       <div class="form-card glass-card">
         <div class="form-header">
-          <button id="btn-back-keyword" class="btn btn-sm btn-ghost" style="position:absolute;left:12px;top:12px">← Quay lại</button>
+          <button id="btn-back-keyword" class="btn btn-sm btn-ghost" style="position:absolute;left:12px;top:12px">← Quay
+            lại</button>
           <h2>🎭 Đặt Từ Khóa Bí Mật</h2>
         </div>
         <div class="kw-info-box">
@@ -208,17 +226,20 @@
         <form id="set-keyword-form">
           <div class="input-group">
             <span class="input-icon">👥</span>
-            <input type="text" id="kw-civilian" placeholder="Từ khóa dân thường (VD: Phở)" required autocomplete="off" maxlength="50">
+            <input type="text" id="kw-civilian" placeholder="Từ khóa dân thường (VD: Phở)" required autocomplete="off"
+              maxlength="50">
           </div>
           <div class="input-group">
             <span class="input-icon">🕵️</span>
-            <input type="text" id="kw-spy" placeholder="Từ gián điệp (VD: Bún bò) — để trống nếu không có" autocomplete="off" maxlength="50">
+            <input type="text" id="kw-spy" placeholder="Từ gián điệp (VD: Bún bò) — để trống nếu không có"
+              autocomplete="off" maxlength="50">
           </div>
           <div class="input-group">
             <span class="input-icon">🏷️</span>
             <input type="text" id="kw-category" placeholder="Chủ đề (VD: Đồ ăn)" autocomplete="off" maxlength="30">
           </div>
-          <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px">▶️ Bắt Đầu Game!</button>
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px">▶️ Bắt Đầu
+            Game!</button>
         </form>
       </div>
     </div>
@@ -351,7 +372,8 @@
                 <span>Mũ Trắng</span>
               </button>
             </div>
-            <button id="btn-cancel-vote" class="btn btn-sm btn-secondary" style="width:100%;margin-top:8px">← Chọn lại người</button>
+            <button id="btn-cancel-vote" class="btn btn-sm btn-secondary" style="width:100%;margin-top:8px">← Chọn lại
+              người</button>
           </div>
         </div>
 
@@ -362,7 +384,8 @@
             <p id="vote-done-text">Đã bỏ phiếu!</p>
             <p class="sub">Chờ mọi người vote xong...</p>
             <div id="vote-progress" style="margin-top:8px;font-size:0.85rem;color:var(--text-muted)"></div>
-            <button id="btn-exit-vote" class="btn btn-secondary btn-sm" style="margin-top:14px">✖ Thoát về phòng</button>
+            <button id="btn-exit-vote" class="btn btn-secondary btn-sm" style="margin-top:14px">✖ Thoát về
+              phòng</button>
           </div>
         </div>
 
@@ -372,7 +395,8 @@
             <div class="eliminated-icon">💀</div>
             <p>Bạn đã bị loại và không thể vote</p>
             <p class="sub">Chờ kết quả...</p>
-            <button id="btn-exit-vote-elim" class="btn btn-secondary btn-sm" style="margin-top:14px">✖ Thoát về phòng</button>
+            <button id="btn-exit-vote-elim" class="btn btn-secondary btn-sm" style="margin-top:14px">✖ Thoát về
+              phòng</button>
           </div>
         </div>
       </div>
@@ -392,7 +416,8 @@
   <section id="screen-reveal" class="screen">
     <div class="reveal-container">
       <div id="reveal-content" class="glass-card" style="padding:32px"></div>
-      <button id="btn-continue-game" class="btn btn-primary btn-lg hidden" style="width:100%;margin-top:16px">▶️ Vòng tiếp theo</button>
+      <button id="btn-continue-game" class="btn btn-primary btn-lg hidden" style="width:100%;margin-top:16px">▶️ Vòng
+        tiếp theo</button>
     </div>
   </section>
 
@@ -424,4 +449,5 @@
   <script src="js/app.js"></script>
 
 </body>
+
 </html>

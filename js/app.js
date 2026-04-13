@@ -116,9 +116,9 @@ const App = {
     // Voting - Cancel step 2
     document.getElementById('btn-cancel-vote').addEventListener('click', () => this.resetVoteStep());
 
-    // Voting - Exit to home
-    document.getElementById('btn-exit-vote').addEventListener('click', () => this.handleBackHome());
-    document.getElementById('btn-exit-vote-elim').addEventListener('click', () => this.handleBackHome());
+    // Voting - Quay lại xem bàn chơi (chứ không rời game)
+    document.getElementById('btn-exit-vote').addEventListener('click', () => this.showScreen('screen-game'));
+    document.getElementById('btn-exit-vote-elim').addEventListener('click', () => this.showScreen('screen-game'));
 
     // Accusation buttons
     document.querySelectorAll('.accusation-btn').forEach(btn => {
@@ -146,7 +146,7 @@ const App = {
 
     // Sliders
     [['setting-players', 'players-value'], ['setting-spies', 'spies-value'],
-     ['setting-whitehats', 'whitehats-value'], ['setting-discussion', 'discussion-value']].forEach(([id, val]) => {
+    ['setting-whitehats', 'whitehats-value'], ['setting-discussion', 'discussion-value']].forEach(([id, val]) => {
       const el = document.getElementById(id);
       if (el) el.addEventListener('input', e => { document.getElementById(val).textContent = e.target.value; });
     });
@@ -720,7 +720,8 @@ const App = {
       document.getElementById('discussion-controls')?.classList.remove('hidden');
       this.startDiscussionTimer(roomData);
 
-      if (Game.isHost) {
+      // Mở khóa nút vote cho tất cả mọi người trong chế độ online
+      if (Game.isHost || roomData.mode === 'online') {
         const bar = document.getElementById('host-action-bar');
         bar?.classList.remove('hidden');
         document.getElementById('btn-start-vote')?.classList.remove('hidden');
@@ -811,13 +812,19 @@ const App = {
       if (remaining === 0) {
         clearInterval(this.guessTimerInterval);
         this.guessTimerInterval = null;
-        // Auto-submit empty (time's up = wrong)
+
         const input = document.getElementById('guess-input');
-        if (input && !input.disabled) {
-          this.showToast('⏰ Hết giờ! Đoán sai!', 'error');
-          input.disabled = true;
-          const btn = document.getElementById('guess-submit-btn');
-          if (btn) btn.disabled = true;
+        if (input) {
+          // Trường hợp 1: Mình là người đang trực tiếp đoán
+          if (!input.disabled) {
+            this.showToast('⏰ Hết giờ! Đoán sai!', 'error');
+            input.disabled = true;
+            const btn = document.getElementById('guess-submit-btn');
+            if (btn) btn.disabled = true;
+            Game.submitGuess('__timeout__');
+          }
+        } else if (Game.isHost) {
+          // Trường hợp 2: Người đoán là Bot (hoặc khán giả)
           Game.submitGuess('__timeout__');
         }
       }
@@ -1167,6 +1174,10 @@ const App = {
     input.disabled = true; btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Đang kiểm tra...';
     this.clearAllTimers();
+
+    // Ẩn luôn khu vực nhập từ đi để ra hiệu đã gửi
+    document.querySelector('.guess-input-wrap')?.classList.add('hidden');
+
     await Game.submitGuess(word);
   },
 
