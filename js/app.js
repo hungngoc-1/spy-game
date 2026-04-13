@@ -987,16 +987,15 @@ const App = {
     if (!me) return;
 
     // Spy & WhiteHat do NOT know their role until voted out.
-    // Everyone sees themselves as "Người Chơi" — only their keyword differs.
-    const isOnlineMode = roomData.mode === 'online';
-    const hideRole = isOnlineMode && (me.role === 'spy' || me.role === 'whitehat');
+    // Everyone sees themselves as "Dân Thường" — only their keyword differs.
+    const hideRole = me.role === 'spy' || me.role === 'whitehat';
 
     let icon, title, cls, hint;
     if (me.role === 'host') {
       icon = '👑'; title = 'QUẢN TRÒ'; cls = 'civilian';
       hint = 'Bạn là người điều phối. Bạn biết hết vai trò!';
     } else if (hideRole) {
-      // Spy/WhiteHat in online mode: look like a normal player
+      // Spy/WhiteHat now look like a normal player across ALL modes
       icon = '👤'; title = 'DÂN THƯỜNG'; cls = 'civilian';
       hint = 'Tìm gián điệp và mũ trắng!';
     } else if (me.role === 'spy') {
