@@ -350,7 +350,7 @@
     <div class="voting-container">
       <div class="voting-card glass-card">
         <h2 class="voting-title">🗳️ Bỏ Phiếu</h2>
-        <p class="voting-subtitle">Chọn người bạn nghi ngờ và khai báo vai trò của họ</p>
+        <p class="voting-subtitle">Mỗi người có 1 phiếu — ai nhiều phiếu nhất sẽ bị loại</p>
 
         <!-- Step 1: Select target -->
         <div id="vote-step-1">
@@ -382,10 +382,7 @@
           <div class="voted-notice">
             <div class="voted-icon">✅</div>
             <p id="vote-done-text">Đã bỏ phiếu!</p>
-            <p class="sub">Chờ mọi người vote xong...</p>
-            <div id="vote-progress" style="margin-top:8px;font-size:0.85rem;color:var(--text-muted)"></div>
-            <button id="btn-exit-vote" class="btn btn-secondary btn-sm" style="margin-top:14px">✖ Thoát về
-              phòng</button>
+            <p class="sub">Chờ host kết thúc vote...</p>
           </div>
         </div>
 
@@ -395,9 +392,18 @@
             <div class="eliminated-icon">💀</div>
             <p>Bạn đã bị loại và không thể vote</p>
             <p class="sub">Chờ kết quả...</p>
-            <button id="btn-exit-vote-elim" class="btn btn-secondary btn-sm" style="margin-top:14px">✖ Thoát về
-              phòng</button>
           </div>
+        </div>
+
+        <!-- Always visible: progress + action buttons -->
+        <div class="vote-footer" style="margin-top:16px">
+          <div id="vote-progress" style="font-size:0.85rem;color:var(--text-muted);text-align:center;margin-bottom:8px"></div>
+          <!-- Host end-vote button -->
+          <button id="btn-end-vote" class="btn btn-primary btn-sm hidden" style="width:100%;margin-top:6px">⚖️ Tính kết quả vote</button>
+          <!-- Back to game button (always shown) -->
+          <button id="btn-exit-vote" class="btn btn-secondary btn-sm" style="width:100%;margin-top:8px">← Xem lại bàn chơi</button>
+          <!-- Legacy compat (hidden, same function) -->
+          <button id="btn-exit-vote-elim" class="btn btn-ghost btn-sm hidden" style="width:100%;margin-top:4px">← Xem lại bàn chơi</button>
         </div>
       </div>
     </div>

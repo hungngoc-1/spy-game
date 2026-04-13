@@ -120,6 +120,9 @@ const App = {
     document.getElementById('btn-exit-vote').addEventListener('click', () => this.showScreen('screen-game'));
     document.getElementById('btn-exit-vote-elim').addEventListener('click', () => this.showScreen('screen-game'));
 
+    // Voting - Host end voting and calculate results
+    document.getElementById('btn-end-vote').addEventListener('click', () => this.handleEndVoting());
+
     // Accusation buttons
     document.querySelectorAll('.accusation-btn').forEach(btn => {
       btn.addEventListener('click', e => {
@@ -454,14 +457,20 @@ const App = {
       return;
     }
 
-    if (status === 'voting' && screen !== 'screen-voting') {
+    if (status === 'voting' && screen === 'screen-voting') {
+      this.updateVotingProgress(roomData);
+      return;
+    }
+
+    // Only auto-enter voting screen if NOT currently on screen-game (user may have pressed Back)
+    if (status === 'voting' && screen !== 'screen-voting' && screen !== 'screen-game') {
       this.enterVotingScreen(roomData);
       return;
     }
 
-    if (status === 'voting' && screen === 'screen-voting') {
+    // If on screen-game during voting, show a floating vote indicator
+    if (status === 'voting' && screen === 'screen-game') {
       this.updateVotingProgress(roomData);
-      // Re-check if all voted (host triggers calculation, but also catch here)
       return;
     }
 
@@ -708,8 +717,9 @@ const App = {
       // Start speaker timer
       this.startSpeakerTimer(roomData);
 
-      // Host controls (speaking: next-speaker always visible)
-      // Also show for current speaker so they can skip their own turn
+      // Show "Next Speaker" button:
+      // - Host can always skip
+      // - Current speaker can skip their own turn
       if (Game.isHost || isMyTurn) {
         const bar = document.getElementById('host-action-bar');
         bar?.classList.remove('hidden');
@@ -720,12 +730,20 @@ const App = {
       document.getElementById('discussion-controls')?.classList.remove('hidden');
       this.startDiscussionTimer(roomData);
 
-      // Mở khóa nút vote cho tất cả mọi người trong chế độ online
-      if (Game.isHost || roomData.mode === 'online') {
+      const user = Auth.currentUser;
+      const me = roomData.players?.[user.uid];
+      const isEliminated = me?.eliminated;
+
+      // Online AI: tất cả người chơi chưa bị loại đều có nút Vote
+      // Chế độ khác: chỉ Host mới có
+      const canVote = !isEliminated && (Game.isHost || isOnlineMode);
+      if (canVote) {
         const bar = document.getElementById('host-action-bar');
         bar?.classList.remove('hidden');
         document.getElementById('btn-start-vote')?.classList.remove('hidden');
-        document.getElementById('btn-skip-vote')?.classList.remove('hidden');
+        if (Game.isHost) {
+          document.getElementById('btn-skip-vote')?.classList.remove('hidden');
+        }
       }
     }
   },
@@ -957,27 +975,43 @@ const App = {
     const me = roomData.players?.[user.uid];
     if (!me) return;
 
-    const roleInfo = {
-      spy: { icon: '🕵️', title: 'GIÁN ĐIỆP', cls: 'spy', hint: 'Bạn KHÔNG biết từ khóa của dân. Hãy giả vờ biết!' },
-      whitehat: { icon: '🎩', title: 'MŨ TRẮNG', cls: 'whitehat', hint: 'Bạn không biết từ khóa. Nếu đoán đúng → thắng!' },
-      civilian: { icon: '👤', title: 'DÂN THƯỜNG', cls: 'civilian', hint: 'Tìm gián điệp và mũ trắng!' },
-      host: { icon: '👑', title: 'QUẢN TRÒ', cls: 'civilian', hint: 'Bạn là người điều phối. Bạn biết hết vai trò!' }
-    };
-    const info = roleInfo[me.role] || roleInfo.civilian;
+    // Spy & WhiteHat do NOT know their role until voted out.
+    // Everyone sees themselves as "Người Chơi" — only their keyword differs.
+    const isOnlineMode = roomData.mode === 'online';
+    const hideRole = isOnlineMode && (me.role === 'spy' || me.role === 'whitehat');
+
+    let icon, title, cls, hint;
+    if (me.role === 'host') {
+      icon = '👑'; title = 'QUẢN TRÒ'; cls = 'civilian';
+      hint = 'Bạn là người điều phối. Bạn biết hết vai trò!';
+    } else if (hideRole) {
+      // Spy/WhiteHat in online mode: look like a normal player
+      icon = '👤'; title = 'NGƯỜI CHƠI'; cls = 'civilian';
+      hint = 'Hãy thảo luận và tìm ra ai là kẻ lạ!';
+    } else if (me.role === 'spy') {
+      icon = '🕵️'; title = 'GIÁN ĐIỆP'; cls = 'spy';
+      hint = 'Bạn KHÔNG biết từ khóa của dân. Hãy giả vờ biết!';
+    } else if (me.role === 'whitehat') {
+      icon = '🎩'; title = 'MŨ TRẮNG'; cls = 'whitehat';
+      hint = 'Bạn không biết từ khóa. Nếu đoán đúng → thắng!';
+    } else {
+      icon = '👤'; title = 'DÂN THƯỜNG'; cls = 'civilian';
+      hint = 'Tìm gián điệp và mũ trắng!';
+    }
 
     const card = document.getElementById('role-modal-card');
     if (!card) return;
-    card.className = `role-modal-card ${info.cls}-card`;
+    card.className = `role-modal-card ${cls}-card`;
     card.innerHTML = `
-      <div style="font-size:3rem">${info.icon}</div>
-      <div class="role-title ${info.cls}" style="font-size:1.4rem;font-weight:900;margin:8px 0">${info.title}</div>
+      <div style="font-size:3rem">${icon}</div>
+      <div class="role-title ${cls}" style="font-size:1.4rem;font-weight:900;margin:8px 0">${title}</div>
       <div class="role-keyword" style="font-size:1.1rem;margin:8px 0">
-        ${me.keyword && me.keyword !== '???' ? `Từ khóa: <strong>${me.keyword}</strong>` : '❓ Không biết từ khóa'}
+        ${me.keyword && me.keyword !== '???' ? `Từ khóa của bạn: <strong>${me.keyword}</strong>` : '❓ Bạn không biết từ khóa'}
       </div>
       <div class="role-category" style="font-size:0.8rem;color:var(--text-muted);margin-top:4px">
         Chủ đề: ${roomData.category || '?'}
       </div>
-      <div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted);font-style:italic">${info.hint}</div>
+      <div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted);font-style:italic">${hint}</div>
     `;
   },
 
@@ -993,7 +1027,17 @@ const App = {
 
   async handleStartVoting() {
     await Game.startVoting();
+    // Auto-enter voting screen for the user who clicked
+    const snap = await db.ref('rooms/' + Game.currentRoom).once('value');
+    this.enterVotingScreen(snap.val());
     setTimeout(() => Game.autoBotVote(), 1500);
+  },
+
+  async handleEndVoting() {
+    if (!Game.isHost) return;
+    const btn = document.getElementById('btn-end-vote');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Đang tính...' }
+    await Game.calculateVoteResults();
   },
 
   async handleSkipVote() {
@@ -1010,11 +1054,15 @@ const App = {
     const user = Auth.currentUser;
     const me = roomData.players?.[user.uid];
 
-    // Show eliminated notice if I'm out
+    // Hide all vote states
     document.getElementById('vote-step-1').classList.add('hidden');
     document.getElementById('vote-step-2').classList.add('hidden');
     document.getElementById('vote-done').classList.add('hidden');
     document.getElementById('vote-eliminated-notice').classList.add('hidden');
+
+    // Back button is always visible
+    const backBtn = document.getElementById('btn-exit-vote');
+    if (backBtn) backBtn.classList.remove('hidden');
 
     // Host observer (in non-online modes, role='host')
     if (me?.role === 'host') {
@@ -1022,21 +1070,29 @@ const App = {
       document.querySelector('#vote-eliminated-notice .eliminated-icon').textContent = '👑';
       document.querySelector('#vote-eliminated-notice p').textContent = 'Bạn là quản trò — đang chờ mọi người vote...';
       document.querySelector('#vote-eliminated-notice .sub').textContent = '';
+      this.updateVotingProgress(roomData);
       return;
     }
 
     if (me?.eliminated) {
       document.getElementById('vote-eliminated-notice').classList.remove('hidden');
+      this.updateVotingProgress(roomData);
       return;
     }
 
+    // If already voted — show done state (preserve vote, no re-vote)
     if (me?.voted) {
-      this.showVoteDone(me.vote, roomData);
+      const roleLabels = { spy: '🕵️ Gián điệp', whitehat: '🎩 Mũ trắng', civilian: '👤 Dân thường' };
+      const targetName = roomData.players?.[me.vote?.targetId]?.name || '...';
+      const roleLabel = roleLabels[me.vote?.accusedRole] || '?';
+      this.showVoteDone(me.vote, roomData, targetName, roleLabel);
+      this.updateVotingProgress(roomData);
       return;
     }
 
     // Step 1: show player list
     this.renderVoteStep1(roomData);
+    this.updateVotingProgress(roomData);
   },
 
   renderVoteStep1(roomData) {
@@ -1082,6 +1138,11 @@ const App = {
     const roleLabels = { spy: '🕵️ Gián điệp', whitehat: '🎩 Mũ trắng', civilian: '👤 Dân thường' };
     document.getElementById('vote-step-2').classList.add('hidden');
     this.showVoteDone({ targetId: id, accusedRole }, null, name, roleLabels[accusedRole]);
+
+    // Refresh progress after voting
+    const snap = await db.ref('rooms/' + Game.currentRoom + '/players').once('value');
+    const players = snap.val() || {};
+    this.updateVotingProgress({ players });
   },
 
   showVoteDone(vote, roomData, targetName, roleLabel) {
@@ -1095,12 +1156,38 @@ const App = {
   },
 
   updateVotingProgress(roomData) {
-    if (this.currentScreen !== 'screen-voting') return;
     const players = roomData.players || {};
     const active = Object.entries(players).filter(([, p]) => !p.eliminated);
+    const realActive = active.filter(([, p]) => !p.isBot);
     const voted = active.filter(([, p]) => p.voted).length;
     const prog = document.getElementById('vote-progress');
     if (prog) prog.textContent = `${voted}/${active.length} người đã vote`;
+
+    const uid = Auth.currentUser?.uid;
+    // Nếu là chế độ Online, chọn người chơi thật đầu tiên trong map active làm "người đại diện" tính vote
+    const isOnlineDelegate = roomData.mode === 'online' && realActive.length > 0 && realActive[0][0] === uid;
+    const canEndVote = Game.isHost || isOnlineDelegate;
+
+    // Show end-vote button for host/delegate (on voting screen only)
+    const endBtn = document.getElementById('btn-end-vote');
+    if (endBtn) {
+      if (canEndVote && this.currentScreen === 'screen-voting') {
+        endBtn.classList.remove('hidden');
+        endBtn.disabled = voted === 0;
+        endBtn.textContent = `⚖️ Tính kết quả vote (${voted} phiếu)`;
+        
+        // Auto trigger if everyone voted
+        if (voted === active.length && active.length > 0 && !this._isCalculatingVotes) {
+          this._isCalculatingVotes = true;
+          this.showToast('Tất cả đã vote! Đang tính kết quả...', 'info');
+          setTimeout(() => {
+            Game.calculateVoteResults().finally(() => this._isCalculatingVotes = false);
+          }, 2000);
+        }
+      } else {
+        endBtn.classList.add('hidden');
+      }
+    }
   },
 
   // ================================

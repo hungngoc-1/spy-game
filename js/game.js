@@ -337,16 +337,17 @@ const Game = {
   async submitVote(targetId, accusedRole) {
     if (!this.currentRoom) return;
     const user = Auth.currentUser;
+    // Check if already voted (prevent double vote)
+    const mySnap = await db.ref(`rooms/${this.currentRoom}/players/${user.uid}`).once('value');
+    const myData = mySnap.val();
+    if (myData?.voted) return; // Already voted, do nothing
+
     await db.ref(`rooms/${this.currentRoom}/players/${user.uid}`).update({
       voted: true,
       vote: { targetId, accusedRole }
     });
-    // Check if all active players have voted
-    const snap = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
-    const players = snap.val();
-    const active = Object.entries(players).filter(([, p]) => !p.eliminated);
-    const allVoted = active.every(([, p]) => p.voted);
-    if (allVoted && this.isHost) await this.calculateVoteResults();
+    // Note: Results are triggered by host manually via calculateVoteResults()
+    // No auto-trigger here — host decides when to end voting
   },
 
   // ================================
@@ -439,6 +440,13 @@ const Game = {
         guessDeadline: Date.now() + 31000
       };
       await db.ref().update(updates);
+      
+      // Nếu người bị bắt là Bot -> Bot không tự nhập phím được, host ép bot đoán sai sau 3 giây để game kết thúc
+      if (eliminatedPlayer.isBot && this.isHost) {
+        setTimeout(() => {
+          this.submitGuess('___bot_wrong_guess___');
+        }, 3500);
+      }
     } catch (err) {
       console.error('calculateVoteResults error:', err);
     }
@@ -621,12 +629,7 @@ const Game = {
         });
       }
     }
-    const updSnap = await db.ref('rooms/' + this.currentRoom + '/players').once('value');
-    const updPlayers = updSnap.val();
-    const updActive = Object.entries(updPlayers).filter(([, p]) => !p.eliminated);
-    if (updActive.every(([, p]) => p.voted) && this.isHost) {
-      await this.calculateVoteResults();
-    }
+    // Results are triggered by host via calculateVoteResults() manually
   }
 };
 
