@@ -79,6 +79,14 @@ const App = {
     document.getElementById('join-room-form').addEventListener('submit', e => this.handleJoinRoom(e));
     document.getElementById('btn-back-join').addEventListener('click', () => this.showScreen('screen-home'));
 
+    // Voting - Exit back to game circle table (not quit game)
+    document.getElementById('btn-exit-vote').addEventListener('click', () => {
+      this.showScreen('screen-game');
+    });
+    document.getElementById('btn-exit-vote-elim').addEventListener('click', () => {
+      this.showScreen('screen-game');
+    });
+
     // Waiting Room
     document.getElementById('btn-leave-room').addEventListener('click', () => this.handleLeaveRoom());
     document.getElementById('btn-start-game').addEventListener('click', () => this.handleStartGame());
@@ -115,10 +123,6 @@ const App = {
 
     // Voting - Cancel step 2
     document.getElementById('btn-cancel-vote').addEventListener('click', () => this.resetVoteStep());
-
-    // Voting - Quay lại xem bàn chơi (chứ không rời game)
-    document.getElementById('btn-exit-vote').addEventListener('click', () => this.showScreen('screen-game'));
-    document.getElementById('btn-exit-vote-elim').addEventListener('click', () => this.showScreen('screen-game'));
 
     // Voting - Host end voting and calculate results
     document.getElementById('btn-end-vote').addEventListener('click', () => this.handleEndVoting());
@@ -463,7 +467,14 @@ const App = {
     }
 
     // Only auto-enter voting screen if NOT currently on screen-game (user may have pressed Back)
-    if (status === 'voting' && screen !== 'screen-voting' && screen !== 'screen-game') {
+    if (status === 'voting' && screen !== 'screen-voting') {
+      const me = roomData.players?.[Auth.currentUser?.uid];
+      const isEliminated = me?.eliminated;
+      // Nếu đã vote rồi hoặc bị loại, và đang ở sảnh game (do ấn nút Trở về game), không cưỡng chế quay lại màn vote
+      if ((me?.voted || isEliminated) && screen === 'screen-game') {
+        this.updateGameScreen(roomData);
+        return;
+      }
       this.enterVotingScreen(roomData);
       return;
     }
@@ -986,8 +997,8 @@ const App = {
       hint = 'Bạn là người điều phối. Bạn biết hết vai trò!';
     } else if (hideRole) {
       // Spy/WhiteHat in online mode: look like a normal player
-      icon = '👤'; title = 'NGƯỜI CHƠI'; cls = 'civilian';
-      hint = 'Hãy thảo luận và tìm ra ai là kẻ lạ!';
+      icon = '👤'; title = 'DÂN THƯỜNG'; cls = 'civilian';
+      hint = 'Tìm gián điệp và mũ trắng!';
     } else if (me.role === 'spy') {
       icon = '🕵️'; title = 'GIÁN ĐIỆP'; cls = 'spy';
       hint = 'Bạn KHÔNG biết từ khóa của dân. Hãy giả vờ biết!';
@@ -1168,25 +1179,25 @@ const App = {
     const isOnlineDelegate = roomData.mode === 'online' && realActive.length > 0 && realActive[0][0] === uid;
     const canEndVote = Game.isHost || isOnlineDelegate;
 
-    // Show end-vote button for host/delegate (on voting screen only)
+    // Giao diện nút cho host/delegate khi ở màn vote
     const endBtn = document.getElementById('btn-end-vote');
     if (endBtn) {
       if (canEndVote && this.currentScreen === 'screen-voting') {
         endBtn.classList.remove('hidden');
         endBtn.disabled = voted === 0;
         endBtn.textContent = `⚖️ Tính kết quả vote (${voted} phiếu)`;
-        
-        // Auto trigger if everyone voted
-        if (voted === active.length && active.length > 0 && !this._isCalculatingVotes) {
-          this._isCalculatingVotes = true;
-          this.showToast('Tất cả đã vote! Đang tính kết quả...', 'info');
-          setTimeout(() => {
-            Game.calculateVoteResults().finally(() => this._isCalculatingVotes = false);
-          }, 2000);
-        }
       } else {
         endBtn.classList.add('hidden');
       }
+    }
+
+    // Auto trigger tính kết quả nếu tất cả đã vote (chạy ngầm bất kể đang ở screen nào)
+    if (canEndVote && voted === active.length && active.length > 0 && !this._isCalculatingVotes) {
+      this._isCalculatingVotes = true;
+      this.showToast('Tất cả đã vote! Đang tính kết quả...', 'info');
+      setTimeout(() => {
+        Game.calculateVoteResults().finally(() => this._isCalculatingVotes = false);
+      }, 2000);
     }
   },
 
