@@ -25,7 +25,14 @@ const App = {
         document.getElementById('user-display-name').textContent = user.name;
         const av = document.getElementById('user-avatar');
         if (av) av.textContent = user.name.charAt(0).toUpperCase();
-        this.showScreen('screen-home');
+        
+        // Auto Reconnect
+        const savedRoom = localStorage.getItem('spyGameRoom');
+        if (savedRoom) {
+          this.handleRejoin(savedRoom);
+        } else {
+          this.showScreen('screen-home');
+        }
       } else {
         this.showScreen('screen-auth');
       }
@@ -36,6 +43,21 @@ const App = {
       const s = document.getElementById('loading-status');
       if (s) s.textContent = 'Đang kết nối Firebase...';
     }, 400);
+  },
+
+  async handleRejoin(code) {
+    document.getElementById('screen-loading').classList.remove('hidden');
+    const result = await Game.joinRoom(code);
+    document.getElementById('screen-loading').classList.add('hidden');
+    if (result.success) {
+      if (result.isRejoin || result.isSpectator) {
+         this.showToast(result.isSpectator ? 'Đang theo dõi game...' : 'Đã kết nối lại phòng!', 'success');
+      }
+      this.enterWaitingRoom(result.code);
+    } else {
+      localStorage.removeItem('spyGameRoom');
+      this.showScreen('screen-home');
+    }
   },
 
   showScreen(id) {
@@ -62,7 +84,10 @@ const App = {
     });
     document.getElementById('login-form').addEventListener('submit', e => this.handleLogin(e));
     document.getElementById('signup-form').addEventListener('submit', e => this.handleSignup(e));
-    document.getElementById('btn-logout').addEventListener('click', () => this.handleLogout());
+    document.getElementById('btn-logout').addEventListener('click', () => { 
+      localStorage.removeItem('spyGameRoom');
+      this.handleLogout(); 
+    });
 
     // Home - 3 modes
     document.getElementById('mode-inperson').addEventListener('click', () => this.selectMode('inperson'));
@@ -70,6 +95,17 @@ const App = {
     document.getElementById('mode-custom').addEventListener('click', () => this.selectMode('custom'));
     document.getElementById('btn-create-room').addEventListener('click', () => this.showScreen('screen-create'));
     document.getElementById('btn-join-room').addEventListener('click', () => this.showScreen('screen-join'));
+
+    // Info
+    document.getElementById('btn-instructions')?.addEventListener('click', () => {
+      document.getElementById('tutorial-modal').classList.remove('hidden');
+    });
+    document.getElementById('btn-close-tutorial')?.addEventListener('click', () => {
+      document.getElementById('tutorial-modal').classList.add('hidden');
+    });
+    document.getElementById('tutorial-modal-overlay')?.addEventListener('click', () => {
+      document.getElementById('tutorial-modal').classList.add('hidden');
+    });
 
     // Create Room
     document.getElementById('create-room-form').addEventListener('submit', e => this.handleCreateRoom(e));
@@ -97,6 +133,19 @@ const App = {
       this.showToast('Đã thêm 3 bot!', 'success');
     });
     document.getElementById('btn-remove-bots').addEventListener('click', () => this.handleRemoveBots());
+
+    // Chat Focus Binding
+    const chatForm = document.getElementById('chat-form');
+    if (chatForm) {
+      chatForm.addEventListener('submit', e => {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        if (input.value.trim()) {
+          Game.sendChatMessage(input.value.trim());
+          input.value = '';
+        }
+      });
+    }
 
     // Set Keyword (custom mode)
     document.getElementById('set-keyword-form').addEventListener('submit', e => this.handleSetKeyword(e));
@@ -166,6 +215,9 @@ const App = {
         }
         if (document.getElementById('role-modal') && !document.getElementById('role-modal').classList.contains('hidden')) {
           this.toggleRoleModal(false);
+        }
+        if (document.getElementById('tutorial-modal') && !document.getElementById('tutorial-modal').classList.contains('hidden')) {
+          document.getElementById('tutorial-modal').classList.add('hidden');
         }
       }
     });
@@ -244,8 +296,12 @@ const App = {
     btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Đang tạo...';
     const result = await Game.createRoom(settings);
     btn.disabled = false; btn.textContent = 'Tạo Phòng';
-    if (result.success) this.enterWaitingRoom(result.code);
-    else this.showToast(result.error, 'error');
+    if (result.success) {
+      localStorage.setItem('spyGameRoom', result.code);
+      this.enterWaitingRoom(result.code);
+    } else {
+      this.showToast(result.error, 'error');
+    }
   },
 
   async handleJoinRoom(e) {
@@ -255,8 +311,12 @@ const App = {
     btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Đang tham gia...';
     const result = await Game.joinRoom(code);
     btn.disabled = false; btn.textContent = 'Tham Gia';
-    if (result.success) this.enterWaitingRoom(result.code);
-    else this.showToast(result.error, 'error');
+    if (result.success) {
+      localStorage.setItem('spyGameRoom', result.code);
+      this.enterWaitingRoom(result.code);
+    } else {
+      this.showToast(result.error, 'error');
+    }
   },
 
   async handleLeaveRoom() {
@@ -267,6 +327,7 @@ const App = {
       await Voice.leave();
       Game.removeAllListeners();
       await Game.leaveRoom();
+      localStorage.removeItem('spyGameRoom');
       this.showScreen('screen-home');
     }
   },
@@ -278,6 +339,7 @@ const App = {
     Game.removeAllListeners();
     Game.currentRoom = null;
     Game.isHost = false;
+    localStorage.removeItem('spyGameRoom');
     this.showScreen('screen-home');
   },
 
@@ -400,6 +462,22 @@ const App = {
         btn.classList.remove('hidden');
         btn.disabled = count < 3;
         btn.textContent = count < 3 ? `Cần ít nhất 3 người (${count}/3)` : '🎮 Bắt Đầu Game';
+      }
+    }
+
+    // Render Chat
+    const chatBox = document.getElementById('chat-messages');
+    if (chatBox) {
+      const isScrolledToBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 10;
+      chatBox.innerHTML = '';
+      if (roomData.chats) {
+        Object.values(roomData.chats).sort((a,b)=>a.ts - b.ts).forEach(chat => {
+          const msg = document.createElement('div');
+          const isMe = chat.senderId === Auth.currentUser?.uid;
+          msg.innerHTML = `<span style="color: ${isMe?'var(--accent)':'#bbb'}; font-weight:bold;">${this.escapeHtml(chat.senderName)}:</span> <span style="color:white; word-break: break-word;">${this.escapeHtml(chat.text)}</span>`;
+          chatBox.appendChild(msg);
+        });
+        if (isScrolledToBottom || chatBox.scrollTop === 0) chatBox.scrollTop = chatBox.scrollHeight;
       }
     }
   },

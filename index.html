@@ -111,8 +111,34 @@
       <div class="home-actions">
         <button id="btn-create-room" class="btn btn-primary btn-lg">🎮 Tạo Phòng</button>
         <button id="btn-join-room" class="btn btn-secondary btn-lg">🚪 Tham Gia</button>
+        <button id="btn-instructions" class="btn btn-ghost btn-sm" style="width:100%; margin-top: 12px;">📖 Hướng dẫn người chơi</button>
       </div>
     </div>
+
+  <!-- ===== TUTORIAL MODAL ===== -->
+  <div id="tutorial-modal" class="role-modal hidden">
+    <div class="role-modal-overlay" id="tutorial-modal-overlay"></div>
+    <div class="role-modal-content" style="max-height: 80vh; overflow-y: auto; text-align: left; padding: 24px;">
+      <h2 style="margin-bottom: 16px; text-align: center;">📖 Hướng dẫn người chơi</h2>
+      <div style="font-size: 0.95rem; line-height: 1.5; color: var(--text);">
+        <h3 style="color: var(--accent-1); margin-top: 12px;">🏠 Trực Tiếp</h3>
+        <p>Phù hợp khi ngồi cùng nhau. Một người tạo phòng, những người khác nhập mã. Web sẽ đóng vai trò chia từ khóa, mọi người nói chuyện đàm thoại bình thường bên ngoài. Cuối cùng, Host quản trò bấm nút chọn người bị loại.</p>
+
+        <h3 style="color: var(--accent-1); margin-top: 12px;">🤖 Online AI</h3>
+        <p>Phù hợp khi chơi từ xa qua mạng. Hệ thống đóng vai trò quản trò. Mọi người trò chuyện qua Voice Chat (Mic) trực tiếp trên trình duyệt. Cuối vòng thảo luận hệ thống sẽ tổng hợp vote qua màn hình bỏ phiếu.</p>
+
+        <h3 style="color: var(--accent-1); margin-top: 12px;">🎭 Tự Ra Đề</h3>
+        <p>Chủ phòng tự nghĩ ra từ khóa để thử thách nhóm thay vì để hệ thống tự cấp từ ngẫu nhiên. Phù hợp tạo sự bất ngờ.</p>
+
+        <div style="margin-top: 16px; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px;">
+          <p><strong>Dân Thường (👤):</strong> Sẽ có cùng một từ khóa, mục tiêu là tìm ra kẻ có từ khóa khác mình đang lẩn trốn.</p>
+          <p><strong>Gián Điệp (🕵️):</strong> Nhận được từ khác dân thường (hoặc không biết từ). Mục tiêu trà trộn, giả vờ như mình biết từ để không bị vote loại, đồng thời cố gắn xâu chuỗi thông tin để biết từ dân thường là gì.</p>
+          <p><strong>Mũ Trắng (🎩):</strong> Không biết từ khóa. Đóng giả dân thường để không bị loại đầu tiên. Rất nguy hiểm vì nếu bị dân vote loại, họ sẽ đoán từ khóa của dân, đoán đúng sẽ LẬT KÈO CHIẾN THẮNG toàn tập!</p>
+        </div>
+      </div>
+      <button id="btn-close-tutorial" class="btn btn-secondary" style="margin-top:20px;width:100%">✕ Đóng</button>
+    </div>
+  </div>
   </section>
 
   <!-- ===== CREATE ROOM ===== -->
@@ -194,6 +220,17 @@
         <h3>Người chơi trong phòng</h3>
       </div>
       <div id="players-list"></div>
+      
+      <!-- Chat Box -->
+      <div class="chat-container glass-card" style="margin-top: 16px; display: flex; flex-direction: column; height: 180px; padding: 12px;">
+        <div id="chat-messages" style="flex: 1; overflow-y: auto; padding-right: 8px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 6px;">
+          <!-- Messages will be injected here -->
+        </div>
+        <form id="chat-form" style="display: flex; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
+          <input type="text" id="chat-input" placeholder="Nhắn tin..." autocomplete="off" style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: white;">
+          <button type="submit" class="btn btn-primary btn-sm" style="padding: 0 16px; border-radius: 8px;">Gửi</button>
+        </form>
+      </div>
       <div id="test-controls" class="hidden" style="margin-bottom:12px">
         <div class="game-section-title">🧪 Chế độ test</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">

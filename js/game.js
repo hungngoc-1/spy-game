@@ -68,15 +68,38 @@ const Game = {
       const snap = await db.ref('rooms/' + code).once('value');
       const room = snap.val();
       if (!room) return { success: false, error: 'Không tìm thấy phòng này' };
-      if (room.status !== 'waiting') return { success: false, error: 'Phòng đã bắt đầu chơi rồi' };
-      const playerCount = room.players ? Object.keys(room.players).length : 0;
-      if (playerCount >= room.settings.maxPlayers) return { success: false, error: 'Phòng đã đầy' };
       const user = Auth.currentUser;
+
+      // 1. Nếu người chơi đã có trong phòng -> Reconnect
       if (room.players && room.players[user.uid]) {
         this.currentRoom = code;
         this.isHost = room.host === user.uid;
-        return { success: true, code };
+        return { success: true, code, isRejoin: true };
       }
+
+      // 2. Kiểm tra số lượng
+      const playerCount = room.players ? Object.keys(room.players).length : 0;
+      if (playerCount >= room.settings.maxPlayers) return { success: false, error: 'Phòng đã đầy' };
+
+      // 3. Nếu phòng đang chơi -> Tham gia như một Khán giả
+      if (room.status !== 'waiting') {
+        await db.ref('rooms/' + code + '/players/' + user.uid).set({
+          name: user.name,
+          role: 'spectator',
+          keyword: 'Tôi là khán giả',
+          voted: true,      // Không cần vote
+          vote: null,
+          eliminated: true, // Xử lý như đã loại khỏi bàn
+          isReady: true,
+          isSpectator: true,
+          joinedAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        this.currentRoom = code;
+        this.isHost = false;
+        return { success: true, code, isSpectator: true };
+      }
+
+      // 4. Tham gia bình thường khi phòng chưa chơi
       await db.ref('rooms/' + code + '/players/' + user.uid).set({
         name: user.name,
         role: null,
@@ -630,6 +653,20 @@ const Game = {
       }
     }
     // Results are triggered by host via calculateVoteResults() manually
+  },
+
+  // ================================
+  // Chat feature
+  // ================================
+  async sendChatMessage(text) {
+    if (!this.currentRoom) return;
+    const user = Auth.currentUser;
+    await db.ref('rooms/' + this.currentRoom + '/chats').push({
+      senderId: user.uid,
+      senderName: user.name,
+      text: text,
+      ts: firebase.database.ServerValue.TIMESTAMP
+    });
   }
 };
 
