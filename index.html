@@ -116,60 +116,6 @@
       </div>
     </div>
 
-  <!-- ===== TUTORIAL MODAL ===== -->
-  <div id="tutorial-modal" class="role-modal hidden">
-    <div class="role-modal-overlay" id="tutorial-modal-overlay"></div>
-    <div class="role-modal-content" style="max-height: 80vh; overflow-y: auto; text-align: left; padding: 24px;">
-      <h2 style="margin-bottom: 16px; text-align: center;">📖 Hướng dẫn người chơi</h2>
-      <div style="font-size: 0.95rem; line-height: 1.5; color: var(--text);">
-        <h3 style="color: var(--accent-1); margin-top: 12px;">🏠 Trực Tiếp</h3>
-        <p>Phù hợp khi ngồi cùng nhau. Một người tạo phòng, những người khác nhập mã. Web sẽ đóng vai trò chia từ khóa, mọi người nói chuyện đàm thoại bình thường bên ngoài. Cuối cùng, Host quản trò bấm nút chọn người bị loại.</p>
-
-        <h3 style="color: var(--accent-1); margin-top: 12px;">🤖 Online AI</h3>
-        <p>Phù hợp khi chơi từ xa qua mạng. Hệ thống đóng vai trò quản trò. Mọi người trò chuyện qua Voice Chat (Mic) trực tiếp trên trình duyệt. Cuối vòng thảo luận hệ thống sẽ tổng hợp vote qua màn hình bỏ phiếu.</p>
-
-        <h3 style="color: var(--accent-1); margin-top: 12px;">🎭 Tự Ra Đề</h3>
-        <p>Chủ phòng tự nghĩ ra từ khóa để thử thách nhóm thay vì để hệ thống tự cấp từ ngẫu nhiên. Phù hợp tạo sự bất ngờ.</p>
-
-        <div style="margin-top: 16px; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px;">
-          <p><strong>Dân Thường (👤):</strong> Sẽ có cùng một từ khóa, mục tiêu là tìm ra kẻ có từ khóa khác mình đang lẩn trốn.</p>
-          <p><strong>Gián Điệp (🕵️):</strong> Nhận được từ khác dân thường (hoặc không biết từ). Mục tiêu trà trộn, giả vờ như mình biết từ để không bị vote loại, đồng thời cố gắn xâu chuỗi thông tin để biết từ dân thường là gì.</p>
-          <p><strong>Mũ Trắng (🎩):</strong> Không biết từ khóa. Đóng giả dân thường để không bị loại đầu tiên. Rất nguy hiểm vì nếu bị dân vote loại, họ sẽ đoán từ khóa của dân, đoán đúng sẽ LẬT KÈO CHIẾN THẮNG toàn tập!</p>
-        </div>
-      </div>
-      <button id="btn-close-tutorial" class="btn btn-secondary" style="margin-top:20px;width:100%">✕ Đóng</button>
-    </div>
-  </div>
-
-  <!-- ===== EDIT SETTINGS MODAL ===== -->
-  <div id="edit-settings-modal" class="role-modal hidden">
-    <div class="role-modal-overlay" id="edit-settings-overlay"></div>
-    <div class="role-modal-content" style="padding: 24px;">
-      <h2 style="margin-bottom: 16px; text-align: center;">⚙️ Sửa Cấu Hình Phòng</h2>
-      <form id="edit-settings-form">
-        <div class="setting-group">
-          <div class="setting-label"><span>Số người tối đa</span><span class="setting-value" id="edit-players-value">10</span></div>
-          <input type="range" id="edit-setting-players" min="3" max="15" value="10">
-        </div>
-        <div class="setting-group">
-          <div class="setting-label"><span>Số gián điệp 🕵️</span><span class="setting-value" id="edit-spies-value">1</span></div>
-          <input type="range" id="edit-setting-spies" min="1" max="4" value="1">
-        </div>
-        <div class="setting-group">
-          <div class="setting-label"><span>Số mũ trắng 🎩</span><span class="setting-value" id="edit-whitehats-value">0</span></div>
-          <input type="range" id="edit-setting-whitehats" min="0" max="3" value="0">
-        </div>
-        <div class="setting-group">
-          <div class="setting-label"><span>TG Thảo luận (s)</span><span class="setting-value" id="edit-discussion-value">120</span></div>
-          <input type="range" id="edit-setting-discussion" min="30" max="300" step="15" value="120">
-        </div>
-        <div style="display:flex; gap:8px; margin-top:20px;">
-          <button type="button" id="btn-close-edit-settings" class="btn btn-secondary" style="flex:1;">Hủy</button>
-          <button type="submit" class="btn btn-primary" style="flex:1;">Lưu</button>
-        </div>
-      </form>
-    </div>
-  </div>
   </section>
 
   <!-- ===== CREATE ROOM ===== -->
@@ -509,6 +455,61 @@
       </div>
     </div>
   </section>
+
+  <!-- ===== TUTORIAL MODAL ===== -->
+  <div id="tutorial-modal" class="role-modal hidden">
+    <div class="role-modal-overlay" id="tutorial-modal-overlay"></div>
+    <div class="role-modal-content" style="max-height: 80vh; overflow-y: auto; text-align: left; padding: 24px;">
+      <h2 style="margin-bottom: 16px; text-align: center;">📖 Hướng dẫn người chơi</h2>
+      <div style="font-size: 0.95rem; line-height: 1.5; color: var(--text);">
+        <h3 style="color: var(--accent-1); margin-top: 12px;">🏠 Trực Tiếp</h3>
+        <p>Phù hợp khi ngồi cùng nhau. Một người tạo phòng. Web đóng vai trò phát thẻ phân vai từ khóa.</p>
+
+        <h3 style="color: var(--accent-1); margin-top: 12px;">🤖 Online AI</h3>
+        <p>Phù hợp trò chuyện qua mạng. Hệ thống tự động làm quản trò và đếm giờ. Thảo luận bằng mic trên trình duyệt.</p>
+
+        <h3 style="color: var(--accent-1); margin-top: 12px;">🎭 Tự Ra Đề</h3>
+        <p>Chủ phòng tự nghĩ ra chủ đề để làm khó dễ người chơi khác, tăng tính bất ngờ.</p>
+
+        <div style="margin-top: 16px; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px;">
+          <p><strong>Dân Thường (👤):</strong> Sẽ có cùng một từ khóa, mục tiêu là tìm ra kẻ có từ khóa khác mình đang lẩn trốn.</p>
+          <p><strong>Gián Điệp (🕵️):</strong> Nhận được từ khác dân thường (hoặc không biết từ). Mục tiêu trà trộn, giả vờ như mình biết từ để không bị vote loại, đồng thời cố gắn xâu chuỗi thông tin để đoán từ dân thường.</p>
+          <p><strong>Mũ Trắng (🎩):</strong> Không có từ khóa. Đóng giả dân thường để sống sót qua vòng vote. Rất nguy hiểm vì nếu bị dân vote loại, họ sẽ đoán từ khóa của dân, đoán đúng MŨ TRẮNG SẼ TRỞ THÀNH NGƯỜI DUY NHẤT CHIẾN THẮNG toàn tập!</p>
+        </div>
+      </div>
+      <button id="btn-close-tutorial" class="btn btn-secondary" style="margin-top:20px;width:100%">✕ Đóng</button>
+    </div>
+  </div>
+
+  <!-- ===== EDIT SETTINGS MODAL ===== -->
+  <div id="edit-settings-modal" class="role-modal hidden">
+    <div class="role-modal-overlay" id="edit-settings-overlay"></div>
+    <div class="role-modal-content" style="padding: 24px;">
+      <h2 style="margin-bottom: 16px; text-align: center;">⚙️ Sửa Cấu Hình Phòng</h2>
+      <form id="edit-settings-form">
+        <div class="setting-group">
+          <div class="setting-label"><span>Số người tối đa</span><span class="setting-value" id="edit-players-value">10</span></div>
+          <input type="range" id="edit-setting-players" min="3" max="15" value="10">
+        </div>
+        <div class="setting-group">
+          <div class="setting-label"><span>Số gián điệp 🕵️</span><span class="setting-value" id="edit-spies-value">1</span></div>
+          <input type="range" id="edit-setting-spies" min="1" max="4" value="1">
+        </div>
+        <div class="setting-group">
+          <div class="setting-label"><span>Số mũ trắng 🎩</span><span class="setting-value" id="edit-whitehats-value">0</span></div>
+          <input type="range" id="edit-setting-whitehats" min="0" max="3" value="0">
+        </div>
+        <div class="setting-group">
+          <div class="setting-label"><span>TG Thảo luận (s)</span><span class="setting-value" id="edit-discussion-value">120</span></div>
+          <input type="range" id="edit-setting-discussion" min="30" max="300" step="15" value="120">
+        </div>
+        <div style="display:flex; gap:8px; margin-top:20px;">
+          <button type="button" id="btn-close-edit-settings" class="btn btn-secondary" style="flex:1;">Hủy</button>
+          <button type="submit" class="btn btn-primary" style="flex:1;">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
