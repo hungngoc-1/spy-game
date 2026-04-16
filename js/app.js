@@ -151,6 +151,79 @@ const App = {
     document.getElementById('set-keyword-form').addEventListener('submit', e => this.handleSetKeyword(e));
     document.getElementById('btn-back-keyword').addEventListener('click', () => this.showScreen('screen-waiting'));
 
+    // Edit Settings sliders bindings
+    [['edit-setting-players', 'edit-players-value'], ['edit-setting-spies', 'edit-spies-value'],
+    ['edit-setting-whitehats', 'edit-whitehats-value'], ['edit-setting-discussion', 'edit-discussion-value']].forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', e => { document.getElementById(val).textContent = e.target.value; });
+    });
+
+    // Rename user
+    document.getElementById('btn-edit-name')?.addEventListener('click', () => {
+      const currentName = Auth.currentUser?.name || '';
+      const newName = prompt('Nhập tên hiển thị mới (sẽ áp dụng ngay):', currentName);
+      if (newName && newName.trim() !== currentName) {
+        Auth.updateProfileName(newName.trim()).then(res => {
+          if(res.success) {
+            document.getElementById('user-display-name').textContent = newName.trim();
+            const av = document.getElementById('user-avatar');
+            if (av) av.textContent = newName.trim().charAt(0).toUpperCase();
+            if(Game.currentRoom) Game.updatePlayerName(newName.trim());
+            this.showToast('Đã đổi tên thành công!', 'success');
+          } else {
+            this.showToast('Lỗi khi đổi tên', 'error');
+          }
+        });
+      }
+    });
+
+    // Edit Settings form submit
+    document.getElementById('edit-settings-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const settings = {
+        maxPlayers: parseInt(document.getElementById('edit-setting-players').value),
+        numSpies: parseInt(document.getElementById('edit-setting-spies').value),
+        numWhiteHats: parseInt(document.getElementById('edit-setting-whitehats').value),
+        discussionTime: parseInt(document.getElementById('edit-setting-discussion').value)
+      };
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true; btn.innerHTML = 'Đang lưu...';
+      const result = await Game.updateRoomSettings(settings);
+      btn.disabled = false; btn.textContent = 'Lưu';
+      if (result.success) {
+        document.getElementById('edit-settings-modal').classList.add('hidden');
+        this.showToast('Đã lưu cấu hình mới!', 'success');
+      } else {
+        this.showToast(result.error, 'error');
+      }
+    });
+
+    // Open Edit settings modal
+    document.getElementById('btn-edit-settings')?.addEventListener('click', async () => {
+      if (!Game.currentRoom) return;
+      const snap = await db.ref('rooms/' + Game.currentRoom + '/settings').once('value');
+      const settings = snap.val();
+      if (settings) {
+        document.getElementById('edit-setting-players').value = settings.maxPlayers || 10;
+        document.getElementById('edit-players-value').textContent = settings.maxPlayers || 10;
+        document.getElementById('edit-setting-spies').value = settings.numSpies || 1;
+        document.getElementById('edit-spies-value').textContent = settings.numSpies || 1;
+        document.getElementById('edit-setting-whitehats').value = settings.numWhiteHats || 0;
+        document.getElementById('edit-whitehats-value').textContent = settings.numWhiteHats || 0;
+        document.getElementById('edit-setting-discussion').value = settings.discussionTime || 120;
+        document.getElementById('edit-discussion-value').textContent = settings.discussionTime || 120;
+        document.getElementById('edit-settings-modal').classList.remove('hidden');
+      }
+    });
+
+    // Sub-modals close events
+    document.getElementById('btn-close-edit-settings')?.addEventListener('click', () => {
+      document.getElementById('edit-settings-modal').classList.add('hidden');
+    });
+    document.getElementById('edit-settings-overlay')?.addEventListener('click', () => {
+      document.getElementById('edit-settings-modal').classList.add('hidden');
+    });
+
     // Game Screen - Role Modal
     document.getElementById('btn-show-my-role').addEventListener('click', () => this.toggleRoleModal(true));
     document.getElementById('btn-close-role-modal').addEventListener('click', () => this.toggleRoleModal(false));
@@ -218,6 +291,9 @@ const App = {
         }
         if (document.getElementById('tutorial-modal') && !document.getElementById('tutorial-modal').classList.contains('hidden')) {
           document.getElementById('tutorial-modal').classList.add('hidden');
+        }
+        if (document.getElementById('edit-settings-modal') && !document.getElementById('edit-settings-modal').classList.contains('hidden')) {
+          document.getElementById('edit-settings-modal').classList.add('hidden');
         }
       }
     });
@@ -462,7 +538,13 @@ const App = {
         btn.classList.remove('hidden');
         btn.disabled = count < 3;
         btn.textContent = count < 3 ? `Cần ít nhất 3 người (${count}/3)` : '🎮 Bắt Đầu Game';
+
+        const btnEdit = document.getElementById('btn-edit-settings');
+        if (btnEdit) btnEdit.classList.remove('hidden');
       }
+    } else {
+        const btnEdit = document.getElementById('btn-edit-settings');
+        if (btnEdit) btnEdit.classList.add('hidden');
     }
 
     // Render Chat

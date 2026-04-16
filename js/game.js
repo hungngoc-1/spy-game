@@ -667,6 +667,33 @@ const Game = {
       text: text,
       ts: firebase.database.ServerValue.TIMESTAMP
     });
+  },
+
+  // ================================
+  // Settings & Profile
+  // ================================
+  async updateRoomSettings(newSettings) {
+    if (!this.isHost || !this.currentRoom) return { success: false };
+    try {
+      await db.ref('rooms/' + this.currentRoom + '/settings').update(newSettings);
+      return { success: true };
+    } catch (err) {
+      console.error('updateRoomSettings error:', err);
+      return { success: false, error: 'Không thể cập nhật cấu hình' };
+    }
+  },
+
+  async updatePlayerName(newName) {
+    if (!this.currentRoom) return { success: false };
+    const user = Auth.currentUser;
+    try {
+      await db.ref(`rooms/${this.currentRoom}/players/${user.uid}`).update({ name: newName });
+      // Update historical speech or chat if needed later, but updating current player name is enough
+      return { success: true };
+    } catch (err) {
+      console.error('updatePlayerName error:', err);
+      return { success: false };
+    }
   }
 };
 

@@ -56,6 +56,22 @@ const Auth = {
   },
 
   /**
+   * Update Profile Name
+   */
+  async updateProfileName(newName) {
+    if (!this.currentUser) return { success: false };
+    try {
+      await auth.currentUser.updateProfile({ displayName: newName });
+      await db.ref('users/' + this.currentUser.uid).update({ name: newName });
+      this.currentUser.name = newName;
+      return { success: true };
+    } catch (error) {
+      console.error('Update name error:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
    * Logout
    */
   async logout() {

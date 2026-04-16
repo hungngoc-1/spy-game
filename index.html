@@ -68,6 +68,7 @@
         <div class="user-info">
           <div class="user-avatar" id="user-avatar">U</div>
           <span id="user-display-name">User</span>
+          <button id="btn-edit-name" class="btn btn-ghost btn-sm" style="margin-left: 8px; padding: 4px;">✏️</button>
         </div>
         <button id="btn-logout" class="btn btn-sm btn-secondary">Đăng xuất</button>
       </div>
@@ -137,6 +138,36 @@
         </div>
       </div>
       <button id="btn-close-tutorial" class="btn btn-secondary" style="margin-top:20px;width:100%">✕ Đóng</button>
+    </div>
+  </div>
+
+  <!-- ===== EDIT SETTINGS MODAL ===== -->
+  <div id="edit-settings-modal" class="role-modal hidden">
+    <div class="role-modal-overlay" id="edit-settings-overlay"></div>
+    <div class="role-modal-content" style="padding: 24px;">
+      <h2 style="margin-bottom: 16px; text-align: center;">⚙️ Sửa Cấu Hình Phòng</h2>
+      <form id="edit-settings-form">
+        <div class="setting-group">
+          <div class="setting-label"><span>Số người tối đa</span><span class="setting-value" id="edit-players-value">10</span></div>
+          <input type="range" id="edit-setting-players" min="3" max="15" value="10">
+        </div>
+        <div class="setting-group">
+          <div class="setting-label"><span>Số gián điệp 🕵️</span><span class="setting-value" id="edit-spies-value">1</span></div>
+          <input type="range" id="edit-setting-spies" min="1" max="4" value="1">
+        </div>
+        <div class="setting-group">
+          <div class="setting-label"><span>Số mũ trắng 🎩</span><span class="setting-value" id="edit-whitehats-value">0</span></div>
+          <input type="range" id="edit-setting-whitehats" min="0" max="3" value="0">
+        </div>
+        <div class="setting-group">
+          <div class="setting-label"><span>TG Thảo luận (s)</span><span class="setting-value" id="edit-discussion-value">120</span></div>
+          <input type="range" id="edit-setting-discussion" min="30" max="300" step="15" value="120">
+        </div>
+        <div style="display:flex; gap:8px; margin-top:20px;">
+          <button type="button" id="btn-close-edit-settings" class="btn btn-secondary" style="flex:1;">Hủy</button>
+          <button type="submit" class="btn btn-primary" style="flex:1;">Lưu</button>
+        </div>
+      </form>
     </div>
   </div>
   </section>
@@ -240,8 +271,12 @@
         </div>
       </div>
       <div class="waiting-actions">
-        <button id="btn-start-game" class="btn btn-primary btn-lg hidden">🎮 Bắt Đầu Game</button>
-        <button id="btn-leave-room" class="btn btn-danger">🚪 Rời Phòng</button>
+        <!-- Đặt flex-wrap để tránh chèn ép nút trên mobile -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; width: 100%;">
+          <button id="btn-edit-settings" class="btn btn-secondary btn-lg hidden" style="flex: 1;">⚙️ Cấu Hình</button>
+          <button id="btn-start-game" class="btn btn-primary btn-lg hidden" style="flex: 2;">🎮 Bắt Đầu</button>
+        </div>
+        <button id="btn-leave-room" class="btn btn-danger" style="margin-top: 8px;">🚪 Rời Phòng</button>
       </div>
     </div>
   </section>
